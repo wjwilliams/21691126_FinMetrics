@@ -37,7 +37,7 @@ Email1: "21691126\\@sun.ac.za" # First Author's Email address
 # Author3: "John Doe"
 # Email3: "Joe\\@gmail.com"
 
-CorrespAuthor_1: TRUE  # If corresponding author is author 3, e.g., use CorrespAuthor_3: TRUE
+CorrespAuthor_1: FALSE  # If corresponding author is author 3, e.g., use CorrespAuthor_3: TRUE
 
 # Comment out below to remove both. JEL Codes only given if keywords also given.
 # keywords: "Multivariate GARCH \\sep Kalman Filter \\sep Copula" # Use \\sep to separate
@@ -108,11 +108,10 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width 
 # Lets load in example data, and see how this can be stored and later called from your 'data' folder.
 if(!require("tidyverse")) install.packages("tidyverse")
 library(tidyverse)
-Example_data <- Texevier::Ex_Dat
 
-# Notice that as you are working in a .Rproj file (I am assuming you are) - the relative paths of your directories start at your specified root.
-# This means that when working in a .Rproj file, you never need to use getwd() - it is assumed as your base root automatically.
-write_rds(Example_data, path = "data/Example_data.rds")
+#Source in all the code from the code file
+list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
+
 
 ```
 
@@ -122,6 +121,234 @@ write_rds(Example_data, path = "data/Example_data.rds")
 <!-- ############################## -->
 
 # Introduction \label{Introduction}
+
+```{r}
+# Let's read in the data first and foremost and have a look at it
+library(tidyverse)
+library(lubridate)
+library(tbl2xts) 
+library(PerformanceAnalytics)
+library(fmxdat)
+ASISA <- read_rds("data/ASISA_Rets.rds")
+BM <- read_rds("data/Capped_SWIX.rds")
+AI_Fund <- read_rds("data/AI_Max_Fund.rds")
+
+# View(ASISA)
+# View(BM)
+# View(AI_Fund)
+#Notes: We are given monthly returns for all funds 
+```
+
+```{r}
+#Lets start by identifying what I actually want to get done:
+# 1) Plot the cumulative returns for all of the funds
+# 2) then Plot the actively managed fund including fees
+# 3) Plot the 3 year rolling returns (including fees)
+# 4) Try and plot the actual distribution of the returns for all three funds
+```
+
+```{r}
+#This code chunk wrangles the data to join all of the returns so we can plot them
+# First we need to select managers to compare to, I think it would be a good idea to  get the top of active managers funds as well as the bottom and then  compare to the AI and capped SWIX
+
+strat_active <- ASISA %>% 
+    filter(Index == "No") %>% #we do not want any indecies
+    filter(FoF == "No") %>%  #We do not want any FoFs
+    select(-Index, - FoF)
+
+#Now i need to get the tickers of the funds that have existed since 2005
+ticker_to_include <- strat_active %>% 
+     filter(date < ymd(20050101)) %>% 
+    pull(Fund)
+
+best_active <- strat_active %>% 
+    arrange(date) %>% 
+    filter(Fund %in% ticker_to_include) %>% #want to make sure that the funds have been around for a comparable amount of time
+    group_by(Fund) %>% 
+    mutate(avg = mean(Returns)) %>%
+    ungroup() %>% # Now we have the average for all the funds 
+    filter(date == last(date)) %>% 
+    filter(date > lubridate::ymd(20230101)) %>% # I only want funds that exist in 2023 to compare to AI
+    filter(avg == max(avg)) %>% #Get the best fund
+    pull(Fund)
+
+worst_active <- strat_active %>% 
+    arrange(date) %>% 
+    filter(Fund %in% ticker_to_include) %>%
+    group_by(Fund) %>% 
+    mutate(avg = mean(Returns)) %>%
+    ungroup() %>% # Now we have the average for all the funds 
+    filter(date == last(date)) %>% 
+    filter(date > lubridate::ymd(20230101)) %>% # I only want funds that exist in 2023 to compare to AI
+    filter(avg == min(avg)) %>% #Get the worst fund
+    pull(Fund)
+
+#Now just clean the managers df
+managers <- strat_active %>% 
+    filter(Fund %in% c(worst_active, best_active)) %>% 
+    spread(Fund, Returns) %>% 
+    rename("Best" = "N924", "Worst" = "V906")
+
+
+#now I can join all three of the dfs so that I have 1 df to use with all of the returns of interest
+full_df <- 
+    
+    left_join(AI_Fund, managers, by = "date") %>% 
+    left_join(., BM %>% select(-Tickers) %>% rename("Benchmark"= "Returns"), by = "date") 
+
+#lets be fancy and use the impute_missing_returns func from the tut to get the returns for the active funds
+final_df <- impute_missing_returns(full_df, impute_returns_method = "Drawn_Distribution_Own")
+
+#last but not least lets get it in tidy format
+final_df <- final_df %>% gather(Tickers, ret, -date)
+
+#Now we are off to the races and can plot the returns
+    
+```
+# Fees 
+```{r Figure1,  warning =  FALSE, fig.align = 'center', fig.cap = "Cumulative Returns \\label{Figure1}"}
+#Lets now just plot the cumulative returns
+cum_plot<- final_df %>% 
+    arrange(date) %>% 
+    group_by(Tickers) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Tickers))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+  #Save it to the graphs folder to use in the powerpoint
+ggsave(file.path("graphs/","Cumulative Returns of All Funds.png"), plot = cum_plot, width = 6, height = 5 )
+  
+cum_plot
+```
+Interpretation:
+```{r Figure2,  warning =  FALSE, fig.align = 'center', fig.cap = "Cumulative Returns with fees \\label{Figure2}"}
+#Now lets add fees on to the actively manaaed portfolios, lets take a fee of 200bps
+#Lets include the fee converter func from the prac
+ feeconverter <- function(x, Ann_Level) (1+x)^(1/Ann_Level)-1
+
+managers_fees <- managers %>% 
+    gather(Tickers, returns, -date) %>% 
+    mutate(fee_rts = returns - feeconverter(200*1e-4, Ann_Level = 12)) %>% #using a fee of 25bps
+    select(-returns) %>% 
+    spread(Tickers, fee_rts) 
+
+#Now we can just join this to the final df
+fee_finaldf <- final_df %>% 
+    spread(Tickers, ret) %>% 
+    select(-Best, -Worst) %>% 
+    left_join(., managers_fees, by = "date")
+
+#Again we can impute missing values
+fee_finaldf<- impute_missing_returns(fee_finaldf, impute_returns_method = "Drawn_Distribution_Own")
+
+#Make it tidy to plot again
+fee_finaldf<-fee_finaldf %>% 
+    gather(Tickers, ret, -date) 
+
+Cum_fee_plot<-fee_finaldf %>% 
+arrange(date) %>% 
+    group_by(Tickers) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Tickers))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+#Save it to the graphs folder to use in the powerpoint
+ggsave(file.path("graphs/","Cumulative Returns of All Funds with fees.png"), plot = Cum_fee_plot, width = 6, height = 5 )
+
+Cum_fee_plot
+```
+# Rolling Returns
+
+```{r Figure3,  warning =  FALSE, fig.align = 'center', fig.cap = "Rolling Returns After Fees \\label{Figure3}"}
+library(RcppRoll)
+
+#We have monthly returns after fees so we can use the Rcpproll package to get the rolling returns
+roll_fee <- fee_finaldf %>% 
+    group_by(Tickers) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + ret, 24, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup()
+
+roll_ret_plot<- 
+roll_fee %>% 
+ggplot() + 
+geom_line(aes(date, RollRets, color = Tickers), alpha = 0.7, 
+    size = 1.25) + 
+labs(title = " Rolling 2 Year Annualized Returns", 
+    subtitle = "", x = "", y = "Rolling 2 year Returns "
+    ) + fmxdat::theme_fmx()
+
+#Save it to the graphs folder to use in the powerpoint
+ggsave(file.path("graphs/","Rolling 2 Year Annualized Returns.png"), plot = roll_ret_plot, width = 6, height = 5 )
+
+
+roll_ret_plot
+```
+```{r Figure4,  warning =  FALSE, fig.align = 'center', fig.cap = "Rolling densities \\label{Figure5}"}
+#Lets now try and plot the rolling density function with the medians 
+roll_density<- roll_fee %>% 
+ggplot(aes(x = RollRets)) + 
+geom_density(aes(fill = Tickers), alpha =0.6)+
+      geom_vline(data = . %>% filter(Tickers == "AI_Fund") %>% summarise(median = median(RollRets)),
+             aes(xintercept = median),
+             linetype = "dashed", color = "red")+
+      geom_vline(data = . %>% filter(Tickers == "Benchmark") %>% summarise(median = median(RollRets)),
+             aes(xintercept = median),
+             linetype = "dashed", color = "orange")+
+      geom_vline(data = . %>% filter(Tickers == "Best") %>% summarise(median = median(RollRets)),
+             aes(xintercept = median),
+             linetype = "dashed", color = "blue")+
+      geom_vline(data = . %>% filter(Tickers == "Worst") %>% summarise(median = median(RollRets)),
+             aes(xintercept = median),
+             linetype = "dashed", color = "purple")+
+    labs(title = " Rolling 2 year densities of the different funds", 
+    subtitle = "", x = "", y = "Rolling 2 year Returns "
+    ) + fmxdat::theme_fmx()
+#Save it to the graphs folder to use in the powerpoint
+ggsave(file.path("graphs/","Rolling 2 year densities of the different funds.png"), plot = roll_density, width = 6, height = 5 )
+
+roll_density
+```
+
+# Rolling annualized Standard Deviation
+```{r Figure5,  warning =  FALSE, fig.align = 'center', fig.cap = "Rolling SD \\label{Figure5}"}
+
+#Now I do the same thing to get the rolling SD
+rollsd_fee <- fee_finaldf %>% 
+    group_by(Tickers) %>%
+    mutate(RollSD = RcppRoll::roll_sd(1 + ret, 36, fill = NA, align = "right") * 
+    sqrt(12)) %>% 
+filter(!is.na(RollSD))
+
+sd_plot<- rollsd_fee %>% 
+ggplot() + 
+geom_line(aes(date, RollSD, color = Tickers), alpha = 0.7, size = 1.25) + 
+    
+labs(title = "Rolling 3 Year Annualized SD ", x = "", y = "Rolling 2 year SD") + theme_fmx()
+
+#Save it to the graphs folder to use in the powerpoint
+ggsave(file.path("graphs/","Rolling 2 Year Annualized S.png"), plot = sd_plot, width = 6, height = 5 )
+
+
+sd_plot
+```
+
+
+
+
+
+
+
+
+
+
 
 
 \newpage
