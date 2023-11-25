@@ -183,11 +183,25 @@ worst_active <- strat_active %>%
     filter(avg == min(avg)) %>% #Get the worst fund
     pull(Fund)
 
+median_active <- 
+  strat_active %>% 
+    arrange(date) %>% 
+    filter(Fund %in% ticker_to_include) %>%
+    group_by(Fund) %>% 
+    mutate(avg = mean(Returns)) %>%
+    ungroup() %>% # Now we have the average for all the funds 
+    filter(date == last(date)) %>% 
+    filter(date > lubridate::ymd(20230101)) %>% # I only want funds that exist in 2023 to compare to AI
+    arrange(avg) %>% # Get the funds with the median average return
+    slice(n()/2) %>% 
+    pull(Fund)
+
+
 #Now just clean the managers df
 managers <- strat_active %>% 
-    filter(Fund %in% c(worst_active, best_active)) %>% 
+    filter(Fund %in% c(worst_active, best_active, median_active)) %>% 
     spread(Fund, Returns) %>% 
-    rename("Best" = "N924", "Worst" = "V906")
+    rename("Best" = "N924", "Worst" = "V906", "Median" = "B444")
 
 
 #now I can join all three of the dfs so that I have 1 df to use with all of the returns of interest
@@ -238,7 +252,7 @@ managers_fees <- managers %>%
 #Now we can just join this to the final df
 fee_finaldf <- final_df %>% 
     spread(Tickers, ret) %>% 
-    select(-Best, -Worst) %>% 
+    select(-Best, -Worst, -Median) %>% 
     left_join(., managers_fees, by = "date")
 
 #Again we can impute missing values
@@ -257,7 +271,7 @@ arrange(date) %>%
     ggplot()+
     geom_line(aes(date, cum_rts, color = Tickers))+
     fmxdat::theme_fmx()+
-    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+    labs(title = "Cumulative Returns of All Funds", subtitle = "With fees", x = "Date", y = "Cumulative Returns")
 #Save it to the graphs folder to use in the powerpoint
 ggsave(file.path("graphs/","Cumulative Returns of All Funds with fees.png"), plot = Cum_fee_plot, width = 6, height = 5 )
 
@@ -280,7 +294,7 @@ roll_ret_plot<-
 roll_fee %>% 
 ggplot() + 
 geom_line(aes(date, RollRets, color = Tickers), alpha = 0.7, 
-    size = 1.25) + 
+    size = 1) + 
 labs(title = " Rolling 2 Year Annualized Returns", 
     subtitle = "", x = "", y = "Rolling 2 year Returns "
     ) + fmxdat::theme_fmx()
@@ -304,10 +318,13 @@ geom_density(aes(fill = Tickers), alpha =0.6)+
              linetype = "dashed", color = "orange")+
       geom_vline(data = . %>% filter(Tickers == "Best") %>% summarise(median = median(RollRets)),
              aes(xintercept = median),
-             linetype = "dashed", color = "blue")+
+             linetype = "dashed", color = "green")+
       geom_vline(data = . %>% filter(Tickers == "Worst") %>% summarise(median = median(RollRets)),
              aes(xintercept = median),
              linetype = "dashed", color = "purple")+
+    geom_vline(data = . %>% filter(Tickers == "Median") %>% summarise(median = median(RollRets)),
+             aes(xintercept = median),
+             linetype = "dashed", color = "blue")+
     labs(title = " Rolling 2 year densities of the different funds", 
     subtitle = "", x = "", y = "Rolling 2 year Returns "
     ) + fmxdat::theme_fmx()
