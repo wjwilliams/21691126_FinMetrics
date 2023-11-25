@@ -305,6 +305,7 @@ ggsave(file.path("graphs/","Rolling 2 Year Annualized Returns.png"), plot = roll
 
 roll_ret_plot
 ```
+
 ```{r Figure4,  warning =  FALSE, fig.align = 'center', fig.cap = "Rolling densities \\label{Figure5}"}
 #Lets now try and plot the rolling density function with the medians 
 roll_density<- roll_fee %>% 

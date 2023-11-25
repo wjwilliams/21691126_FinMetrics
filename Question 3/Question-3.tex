@@ -130,6 +130,20 @@
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 
 %%% Include extra packages specified by user
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
 
 %%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
 %% page layout
@@ -164,7 +178,7 @@
 
 \begin{frontmatter}  %
 
-\title{Question 2}
+\title{Question 3}
 
 % Set to FALSE if wanting to remove title (for submission)
 
@@ -227,16 +241,41 @@ Answers the Question
 \section{\texorpdfstring{Introduction
 \label{Introduction}}{Introduction }}\label{introduction}}
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-2-1.pdf}
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-4-1.pdf}
 
-\hypertarget{volatility-analysis}{%
-\section{Volatility analysis}\label{volatility-analysis}}
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-6-1.pdf}
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-4-1.pdf}
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-7-1.pdf}
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-5-1.pdf}
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-6-1.pdf}
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-7-1.pdf}
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-11-1.pdf}
+\# Stratification
+
+\begin{tabular}{l|r|r|l|r}
+\hline
+Index & SD & Full\_SD & Period & Ratio\\
+\hline
+SWIX & 0.0427946 & 0.0352164 & High\_Vol & 1.215188\\
+\hline
+ALSI & 0.0421107 & 0.0349374 & High\_Vol & 1.205317\\
+\hline
+\end{tabular}
+
+\begin{tabular}{l|r|r|l|r}
+\hline
+Index & SD & Full\_SD & Period & Ratio\\
+\hline
+ALSI & 0.0352852 & 0.0349374 & Low\_Vol & 1.0099538\\
+\hline
+SWIX & 0.0347505 & 0.0352164 & Low\_Vol & 0.9867711\\
+\hline
+\end{tabular}
+
+\hypertarget{capping}{%
+\section{Capping}\label{capping}}
+
+\includegraphics{Question-3_files/figure-latex/unnamed-chunk-16-1.pdf}
 
 \newpage
 

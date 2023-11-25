@@ -109,6 +109,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width 
 if(!require("tidyverse")) install.packages("tidyverse")
 library(tidyverse)
 library(fmxdat)
+library(PerformanceAnalytics)
+library(tbl2xts)
 Indexes <- read_rds("data/Cncy_Hedge_Assets.rds")
 ZAR <- read_rds("data/Monthly_zar.rds")
 
@@ -241,14 +243,14 @@ BL_perc <- countingdf %>%
 #Top left with fees quandrant percentage calculation
 TLF_perc <- countingdf %>% 
     filter(port_ret >0) %>% 
-    filter(currency_ret<0.03) %>% 
+    filter(currency_ret< -0.03) %>% 
     nrow()/no_obs*100 
  TLF_perc<-   round(TLF_perc,0)
 
 #Bottom left with fees quandrant percentage calculation
 BLF_perc <- countingdf %>% 
     filter(port_ret <0) %>% 
-    filter(currency_ret<0.03) %>% 
+    filter(currency_ret< -0.03) %>% 
     nrow()/no_obs*100  
   BLF_perc<-  round(BLF_perc,0)
 
@@ -266,16 +268,16 @@ scatter_plot <- ggplot(full_df)+
     geom_vline(xintercept = 0)+
     geom_vline(xintercept = -0.03, linetype = "dashed")+
     geom_label(aes(x = -0.1, y = 0.1, label = "Hedge works but, amplifies Volatility"), color = "black", size = 2)+
-    geom_label(aes(x = -0.1, y = -0.1, label = "Best case for hedge: higher return lowe volatility"), color = "black", size = 2) +
+    geom_label(aes(x = -0.1, y = -0.1, label = "Best case for hedge:\\ higher return lower volatility"), color = "black", size = 2) +
     geom_label(aes(x = 0.1, y = 0.1, label = "Hedge throws away returns"), color = "black", size = 2) +
     geom_label(aes(x = 0.1, y = -0.1, label = "Hedge removes currency cushion"), color = "black", size = 2)+
     geom_label(aes(x = -0.17, y = 0.17, label = glue("{TL_perc}%")), color = "black", size = 3)+
     geom_label(aes(x = -0.17, y = -0.17, label = glue("{BL_perc}%")), color = "black", size = 3)+
     geom_label(aes(x = 0.17, y = 0.17, label = glue("{TR_perc}%")), color = "black", size = 3)+
-    geom_label(aes(x = 0.17, y = 0.17, label = glue("{BR_perc}%")), color = "black", size = 3)+
+    geom_label(aes(x = 0.17, y = -0.17, label = glue("{BR_perc}%")), color = "black", size = 3)+
     geom_label(aes(x = -0.17, y = 0.17, label = glue("{TL_perc}%")), color = "black", size = 3)+
-    geom_label(aes(x = -0.5, y = -0.17, label = glue("{BLF_perc}%")), color = "black", size = 3)+
-    geom_label(aes(x = -0.5, y = 0.17, label = glue("{TLF_perc}%")), color = "black", size = 3)+
+    geom_label(aes(x = -0.05, y = -0.17, label = glue("{BLF_perc}%")), color = "black", size = 3)+
+    geom_label(aes(x = -0.05, y = 0.17, label = glue("{TLF_perc}%")), color = "black", size = 3)+
 
     labs(title = "Scatter Plot of USD/ZAR and Portfolio returns ", x = "USD-ZAR Returns", y = "60-40 Local-Global Returns")+
     lims(x = c(-0.2, 0.2), y = c(-0.2, 0.2)) +  # Set axis limits
@@ -297,9 +299,155 @@ scatter_plot_density
 
 
 
+
+
+
+# Volatility analysis
 ```{r}
 
+#Lets use the fee converter again assuming that there are fees for hedging assuming the same three percent as above
+ feeconverter <- function(x, Ann_Level) (1+x)^(1/Ann_Level)-1
+
+#The hedged return is exactly the return of the global assets less the fee to hedge
+hedged<- Indexes %>% 
+    mutate(MSCI_ACWI_wt = 0.18) %>% 
+    mutate(Bbg_Agg_wt = 0.12) %>% 
+    mutate(J433_wt = 0.28) %>% 
+    mutate(ALBI_wt= 0.28) %>% 
+    mutate(hedged_ret =(MSCI_ACWI*MSCI_ACWI_wt)+ (Bbg_Agg*Bbg_Agg_wt)+ (J433*J433_wt)+(ALBI*ALBI_wt) - feeconverter(300*1e-4, Ann_Level = 12)) %>% 
+    select(date, hedged_ret)
+
+unhedged <- Indexes %>% 
+    left_join(., ex_ret, by ="date") %>% 
+    filter(!is.na(currency_ret)) %>% 
+    mutate(MSCI_ACWI_wt = 0.18) %>% 
+    mutate(Bbg_Agg_wt = 0.12) %>% 
+    mutate(J433_wt = 0.28) %>% 
+    mutate(ALBI_wt= 0.28) %>% 
+    mutate(unhedged_ret =((MSCI_ACWI*MSCI_ACWI_wt)+ (Bbg_Agg*Bbg_Agg_wt))*currency_ret + (J433*J433_wt)+(ALBI*ALBI_wt)) %>% #here the global assets are subject to the volatility of the rand
+    select(date, unhedged_ret)
+
+#Now we can join the dfs so we can compare the returns and the volatility
+hedged_comp_df <-
+    left_join(unhedged, hedged, by = "date") %>% 
+    rename("Hedged"= "hedged_ret", "Unhedged"= "unhedged_ret")
+
+#Lets get the annulised returns for both portfolios
+#Start by getting tidy data
+tidy_hedged <-hedged_comp_df
 ```
+
+
+```{r}
+#Now lets plot the rollinf returns and SD
+#Let's again use the RcppRoll package agin to get annualised reterns and volatility
+library(RcppRoll)
+
+roll_ret_hedge <- hedged_comp_df %>% 
+    gather(Type, ret, -date) %>% #here type refers to whether it is hedged or not
+    group_by(Type) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + ret, 24, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup()
+
+roll_ret_hedge_plot<- 
+roll_ret_hedge %>% 
+ggplot() + 
+geom_line(aes(date, RollRets, color = Type), alpha = 0.7, 
+    size = 1) + 
+labs(title = " Rolling 2 Year Annualized Returns", 
+    subtitle = "", x = "", y = "Rolling 2 year Returns "
+    ) + fmxdat::theme_fmx()
+
+roll_ret_hedge_plot
+```
+
+```{r}
+#Now lets get the rolling sd as a measure of volatility
+
+roll_SD_hedge <-  hedged_comp_df %>% 
+    gather(Type, ret, -date) %>% 
+    group_by(Type) %>%
+    mutate(RollSD = RcppRoll::roll_sd(1 + ret, 36, fill = NA, align = "right") * 
+    sqrt(12)) %>% 
+filter(!is.na(RollSD))
+
+roll_SD_hedge_plot<- roll_SD_hedge %>% 
+ggplot() + 
+geom_line(aes(date, RollSD, color = Type), alpha = 0.7, size = 1.25) + 
+    
+labs(title = "Rolling 3 Year Annualized SD ", x = "", y = "Rolling 2 year SD") + theme_fmx()
+
+roll_SD_hedge_plot
+```
+```{r}
+#Lets give that table a crack
+#Lets get the annulised returns for both portfolios
+#Start by getting tidy data
+tidy_hedged <-hedged_comp_df %>% 
+    gather(Type, ret, -date) %>% 
+    tbl_xts(., cols_to_xts = ret, spread_by = Type)
+
+#Now lets use the performance analytics package to get the annulized returns and std devs following the practical 
+
+hedge_plot <- 
+    bind_rows(
+        tidy_hedged %>% tail(12) %>% PerformanceAnalytics::Return.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "A"),
+        tidy_hedged %>% tail(36) %>% PerformanceAnalytics::Return.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "B"),
+        tidy_hedged %>% tail(60) %>% PerformanceAnalytics::Return.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "C")
+    )%>% data.frame() %>% gather(Type, mu, -Freq)
+to_string <- as_labeller(c(`A` = "1 Year", `B` = "3 Years", `C` = "5 Years"))
+
+g <- hedge_plot %>% 
+ggplot() + 
+    
+  geom_bar( aes(Type, mu, fill = Type), stat="identity") + 
+    
+  facet_wrap(~Freq, labeller = to_string, nrow = 1) + 
+    
+  labs(x = "", y = "Returns (Ann.)" )+
+    theme_fmx()
+g
+```
+```{r}
+#Now I plot a similar graph instead looking at the volatility
+hedge_plot_SD <- 
+    bind_rows(
+        tidy_hedged %>% tail(12) %>% PerformanceAnalytics::StdDev.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "A"),
+        tidy_hedged %>% tail(36) %>% PerformanceAnalytics::StdDev.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "B"),
+        tidy_hedged %>% tail(60) %>% PerformanceAnalytics::StdDev.annualized(., scale = 12) %>% data.frame() %>% mutate(Freq = "C")
+    )%>% data.frame() %>% gather(Type, mu, -Freq)
+to_string <- as_labeller(c(`A` = "1 Year", `B` = "3 Years", `C` = "5 Years"))
+
+Vol_annulised <- hedge_plot_SD %>% 
+ggplot() + 
+    
+  geom_bar( aes(Type, mu, fill = Type), stat="identity") + 
+    
+  facet_wrap(~Freq, labeller = to_string, nrow = 1) + 
+    
+  labs(x = "", y = "Vol (Ann.)" )+
+    theme_fmx()
+Vol_annulised
+```
+```{r}
+#Lastly I just want to plot the correlations between exchange rate and the portfolios
+rho_hedge<- hedged_comp_df %>% 
+    left_join(., ex_ret, by = "date") %>% 
+    mutate(hedge_rho = cor(Hedged, currency_ret)) %>% 
+    mutate(unhedged_rho = cor(Unhedged, currency_ret)) %>% 
+    select(date, hedge_rho, unhedged_rho) %>% 
+    rename("Hedged"= "hedge_rho", "Unhedged" = "unhedged_rho") %>% 
+    gather(Type, Correlation, -date) %>% 
+    group_by(Type) %>% 
+    summarise(Correlation= mean(Correlation))
+
+
+
+
+```
+
 
 
 
