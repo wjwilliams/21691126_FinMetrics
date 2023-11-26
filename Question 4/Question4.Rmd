@@ -1,0 +1,288 @@
+---
+title: "Question 1"
+documentclass: elsarticle
+Thesis_FP: no
+output:
+  pdf_document:
+    keep_tex: yes
+    template: Tex/TexDefault.txt
+    fig_width: 3.5
+    fig_height: 3.5
+  html_document:
+    df_print: paged
+Author1: Wesley James Williams
+Ref1: Stellenbosch University, South Africa
+Email1: 21691126\@sun.ac.za
+CorrespAuthor_1: yes
+BottomRFooter: \footnotesize Page \thepage
+addtoprule: yes
+addfootrule: yes
+margin: 2.3
+bottom: 2
+top: 2.5
+HardSet_layout: yes
+linenumbers: no
+bibliography: Tex/ref.bib
+csl: "Tex/harvard-stellenbosch-university.csl"
+RemovePreprintSubmittedTo: yes
+Journal: Financial Econometrics 871
+toc: no
+numbersections: yes
+fontsize: 12pt
+linestretch: 1.2
+link-citations: yes
+AddTitle: yes
+abstract: |
+  Answers the Question
+---
+
+<!-- First: Set your default preferences for chunk options: -->
+
+<!-- If you want a chunk's code to be printed, set echo = TRUE. message = FALSE stops R printing ugly package loading details in your final paper too. I also suggest setting warning = FALSE and checking for warnings in R, else you might find ugly warnings in your paper. -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 6, fig.height = 5, fig.pos="H", fig.pos = 'H')
+# Note: Include = FALSE implies the code is executed, but not printed in your pdf.
+# warning and message = FALSE implies ugly messages and warnings are removed from your pdf.
+# These should be picked up when you execute the command chunks (code sections below) in your rmd, not printed in your paper!
+
+# Lets load in example data, and see how this can be stored and later called from your 'data' folder.
+if(!require("tidyverse")) install.packages("tidyverse")
+library(tidyverse)
+library(fmxdat)
+library(gridExtra)
+library(patchwork)
+
+list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
+
+#Let's load in the data:
+Flows <- read_rds("data/ASISA_Flows.rds")
+Rets <- read_rds("data/ASISA_Rets.rds")
+```
+
+
+<!-- ############################## -->
+<!-- # Start Writing here: -->
+<!-- ############################## -->
+
+# Broad Overview
+
+```{r}
+
+
+asisa_full <- 
+    left_join( Rets, Flows, by = c("date", "Fund", "Index", "FoF")) %>% 
+    filter(FoF =="No") %>% 
+    filter(Index == "No") %>% 
+    select(-FoF,-Index) #We do not want any FoFs or indexes
+
+# Do we want to look at indexes?
+
+#What i want to do:
+# Get a rolling 3 year return and from this arrange by desc return and the assign that fund a top, middle or bottom, I can these group by these indicators at each date and then investigate the flows in the next period
+
+#I then want to pull the tickers of the funds that beat the benchmark
+
+```
+
+```{r}
+
+
+roll_asisa <- asisa_full %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    arrange(desc(RollRets)) %>% 
+    group_by(date) %>%
+  mutate(PerformanceIndicator = case_when(
+    between(row_number(), 1, n() %/% 3) ~ "Top",
+    between(row_number(), n() %/% 3 + 1, 2 * (n() %/% 3)) ~ "Middle",
+    between(row_number(), 2 * (n() %/% 3) + 1, n()) ~ "Bottom",
+    TRUE ~ NA_character_)) %>%
+  ungroup()
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# I waant to average out the returns for each performance so that it plots nicely
+avg_returns <- roll_asisa %>%
+  group_by(date, PerformanceIndicator) %>%
+  summarize(AvgRollRets = mean(RollRets, na.rm = TRUE))
+
+# Need to get the total flows of the next period to show how performance influences flows in the next period
+total_flows <- roll_asisa %>%
+  group_by(date, PerformanceIndicator) %>%
+  summarize(TotalFlows = sum(lead(Flows), na.rm = TRUE))
+
+# Now lets plot them 
+plot_returns<-ggplot(avg_returns) +
+  geom_line(aes(x = date, y = AvgRollRets, color = PerformanceIndicator), size = 1) +
+  labs(title = "Yearly Rolling returns and subsequent flows by Performance",
+         x = NULL,
+       y = "Average Rolling Returns") +
+  scale_color_manual(values = c("Top" = "green", "Middle" = "blue", "Bottom" = "red")) +
+    theme(legend.position = "none")
+
+# Plot total flows
+plot_flows <-ggplot(total_flows) +
+  geom_bar(aes(x = date, y = TotalFlows, fill = PerformanceIndicator), position = "stack", stat = "identity", alpha = 0.7) +
+  labs(title = NULL,
+       x = NULL,
+       y = "Total Flows") +
+  scale_fill_manual(values = c("Top" = "green", "Middle" = "blue", "Bottom" = "red")) +
+  theme_fmx()
+
+broad<- plot_returns / plot_flows
+broad
+```
+
+```{r}
+#Now i want to bring the capped swix back as the benchmak to assess which funds have outperformed the benchmark the most often
+
+#read in the BM data
+BM<- read_rds("data/Capped_SWIX.rds")
+
+
+#First, join the data and then I need to ensure that we have funds over a certain period 
+asisa_BM<- 
+    left_join(asisa_full, BM %>% select(date, Returns) %>% rename("BM"="Returns"), by = "date") %>% 
+    filter(date > lubridate::ymd(20100101)) %>% #only interested post GFC
+    group_by(Fund) %>% 
+    filter(n_distinct(format(date, "%Y")) >= 10)
+
+#Now i want to assign a binary variable to whether a fund beat the benchmark per period and then we can identify the funds that consistently outperformed the BM and summing and dividing by n() will give us the percentage
+perform_top <- asisa_BM %>% 
+  group_by(date) %>% 
+  mutate(Outperformed = ifelse(Returns > BM, 1, 0)) %>% 
+    group_by(Fund) %>% 
+    summarise(out_perc = sum(Outperformed)/n()) %>% 
+    arrange(desc(out_perc)) %>% 
+  top_n(10, out_perc) %>% 
+  pull(Fund)
+
+perform_bad <- asisa_BM %>% 
+  group_by(date) %>% 
+  mutate(Outperformed = ifelse(Returns > BM, 1, 0)) %>% 
+    group_by(Fund) %>% 
+    summarise(out_perc = sum(Outperformed)/n()) %>% 
+    arrange(-desc(out_perc)) %>% 
+  slice_head(n = 10) %>% 
+  pull(Fund)
+
+#Now we have the top and bottom 10 performing funds, lets see how much the drawdowns of the funds effects the overall performance to the benchmark before looking at the flows of the best and worst funds
+
+top_compare_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_top) %>% 
+     arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    
+    ggplot() +
+    geom_line(aes(date, RollRets, colour = Fund))+
+    geom_line(aes(date, BM), size = 1.5, alpha = 0.5)
+
+top_cum_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_top) %>% 
+     arrange(date) %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(cum_rts = cumprod(1+ Returns)) %>% 
+    mutate(BM_cum = cumprod(1+ BM) ) %>% 
+    select(-Returns) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Fund))+
+    labs(title = "Cumulative Returns of All Funds",  x = "Date", y = "Cumulative Returns")+
+    theme(legend.position = "none")
+
+top<- top_compare_plot/ top_cum_plot
+
+top
+```
+
+```{r}
+bad_compare_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_bad) %>% 
+     arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    
+    ggplot() +
+    geom_line(aes(date, RollRets, colour = Fund))+
+    geom_line(aes(date, BM), size = 1.5, alpha = 0.5)
+
+bad_cum_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_bad) %>% 
+     arrange(date) %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(cum_rts = cumprod(1+ Returns)) %>% 
+    mutate(BM_cum = cumprod(1+ BM) ) %>% 
+    select(-Returns) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Fund))+
+    labs(title = "Cumulative Returns of All Funds",  x = "Date", y = "Cumulative Returns")+
+    theme(legend.position = "none")
+    
+bad<-bad_compare_plot/ bad_cum_plot
+bad
+```
+
+
+
+
+
+```{r}
+#Now i want to get the correlation of flows and returns based on the funds identified above,
+asisa_BM <- asisa_BM %>%
+  group_by(Fund) %>%
+  mutate(
+    LeadFlows_1month = lead(Flows, 1),
+    LeadFlows_3months = lead(Flows, 3),
+    LeadFlows_1year = lead(Flows, 12),
+    LeadFlows_2years = lead(Flows, 24),
+    LeadFlows_3years = lead(Flows, 36),
+    LeadFlows_5years = lead(Flows, 60)
+  )
+
+# use the tickers found above
+asisa_BM <- asisa_BM %>%
+  mutate(Type = ifelse(Fund %in% perform_bad, "Bad", "Top"))
+
+# put it all into a table 
+correlation_table <- asisa_BM %>%
+  group_by(Type) %>%
+  summarize(
+    Corr_1month = cor(Returns, LeadFlows_1month, use = "complete.obs"),
+    Corr_3months = cor(Returns, LeadFlows_3months, use = "complete.obs"),
+    Corr_1year = cor(Returns, LeadFlows_1year, use = "complete.obs"),
+    Corr_2years = cor(Returns, LeadFlows_2years, use = "complete.obs"),
+    Corr_3years = cor(Returns, LeadFlows_3years, use = "complete.obs"),
+    Corr_5years = cor(Returns, LeadFlows_5years, use = "complete.obs")
+  )
+
+# Print the correlation table
+kableExtra::kable(correlation_table)
+
+
+```
+
+\newpage
+
+# References {-}
+
+<div id="refs"></div>
+
+
