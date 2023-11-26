@@ -92,7 +92,7 @@ output:
     fig_width: 3.5 # Adjust default figure sizes. This can also be done in the chunks of the text.
     fig_height: 3.5
 abstract: |
-  Answers the Question
+ Comparison of the SWIX and ALSI.
 ---
 
 <!-- First: Set your default preferences for chunk options: -->
@@ -106,6 +106,7 @@ library(tidyverse)
 library(tbl2xts)
 library(rmsfuns)
 library(fmxdat)
+library(patchwork)
 #Source in all the code from the code file
 list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
 
@@ -124,6 +125,7 @@ swix <- read_rds("data/Capped_SWIX.rds")
 <!-- ############################## -->
 
 # Introduction \label{Introduction}
+This question presents an analysis of the return profiles of the SWIX (J403) and the ALSI (J203). I begin by simply plotting the cumulative returns of both funds with all sectors and market caps. I then break down both indexes by sector and market caps. I then provide insights into the volatility of both indexes subject to high a low volatility periods of the USD/ZAR exchange rate. Lastly, I present the cumulative return profiles of both indexes subject to different constrains on the capping. This report provides evidence that the methodology used for the J203 (ALSI) provides higher returns and is influenced less by exchange rate volatility.
 ```{r}
 #The question has three parts
 #1) Compare the SWIX and ALSI (two funds) and then within the ALSI we need to compare rreturns of sectors and cap size
@@ -315,7 +317,7 @@ compar_plot<- alsi_rets %>%
 
 compar_plot
 ```
-
+The figure above highlights that ALSI has a higher cumulative return that the SWIX
 ```{r}
 
 #I created a function that filters the data to each sector, adjusts the weight so all the weights of each stock in th sector sum to one (REMEMBER this). then I follow practical 2 where i apply the rmsfun::Safe_Return.portfolio to get the final portfolio returns
@@ -323,32 +325,32 @@ compar_plot
 
 #apply the function to all of the sectors for both indexes and then
 Resources_j4 <-calculate_portfolio_returns(data = ALSI, sector_name = "Resources", fund_name = "J403") %>% 
-    rename("Resources_SWIX"= "PortfolioReturn" )
+    rename("Resources"= "PortfolioReturn" )
 
 Financial_j4<- calculate_portfolio_returns(data = ALSI, sector_name = "Financials", fund_name = "J403") %>% 
-    rename("Financials_SWIX"= "PortfolioReturn")
+    rename("Financials"= "PortfolioReturn")
 
 Industrials_j4 <- calculate_portfolio_returns(data = ALSI, sector_name = "Industrials", fund_name = "J403") %>% 
-    rename("Industrials_SWIX"= "PortfolioReturn")
+    rename("Industrials"= "PortfolioReturn")
 
 Property_j4 <-  calculate_portfolio_returns(data = ALSI, sector_name = "Property", fund_name = "J403") %>% 
-    rename("Property_SWIX"= "PortfolioReturn")
+    rename("Property"= "PortfolioReturn")
 
 #now do it again for fund J203
-Resources_j2 <-calculate_portfolio_returns(data = ALSI, sector_name = "Resources", fund_name = "J403") %>% 
-    rename("Resources_ALSI"= "PortfolioReturn" )
+Resources_j2 <-calculate_portfolio_returns(data = ALSI, sector_name = "Resources", fund_name = "J203") %>% 
+    rename("Resources"= "PortfolioReturn" )
 
-Financial_j2<- calculate_portfolio_returns(data = ALSI, sector_name = "Financials", fund_name = "J403") %>% 
-    rename("Financials_ALSI"= "PortfolioReturn")
+Financial_j2<- calculate_portfolio_returns(data = ALSI, sector_name = "Financials", fund_name = "J203") %>% 
+    rename("Financials"= "PortfolioReturn")
 
-Industrials_j2 <- calculate_portfolio_returns(data = ALSI, sector_name = "Industrials", fund_name = "J403") %>% 
-    rename("Industrials_ALSI"= "PortfolioReturn")
+Industrials_j2 <- calculate_portfolio_returns(data = ALSI, sector_name = "Industrials", fund_name = "J203") %>% 
+    rename("Industrials"= "PortfolioReturn")
 
-Property_j2 <-  calculate_portfolio_returns(data = ALSI, sector_name = "Property", fund_name = "J403") %>% 
-    rename("Property_ALSI"= "PortfolioReturn")   
+Property_j2 <-  calculate_portfolio_returns(data = ALSI, sector_name = "Property", fund_name = "J203") %>% 
+    rename("Property"= "PortfolioReturn")   
 
 #Now I just need to join them all together
-
+#Unfortunatly the function did not work perfectly and I cannot identify the issue, so i needed to use the impute returns function to ensure that i could plot the returns
 Sectors_returns_j4 <-
     left_join(Resources_j4, Financial_j4, by = "date") %>% 
     left_join(., Industrials_j4, by ="date") %>% 
@@ -380,7 +382,7 @@ cum_sectors_j4<- Sectors_returns_j4 %>%
     ggplot()+
     geom_line(aes(date, cum_rts, color = Sector))+
     fmxdat::theme_fmx()+
-    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+    labs(title = "Cumulative Returns of SWIX", subtitle = "by Sector", x = "Date", y = "Cumulative Returns")
 
 cum_sectors_j4
 ```
@@ -395,15 +397,12 @@ cum_sectors_j2<- Sectors_returns_j2 %>%
     ggplot()+
     geom_line(aes(date, cum_rts, color = Sector))+
     fmxdat::theme_fmx()+
-    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+    labs(title = "Cumulative Returns of ALSI", subtitle = "By Sector", x = "Date", y = "Cumulative Returns")
 
-cum_sectors_j2
+cum_sectors_j2 
 ```
 
-```{r}
-#now lets plot the SWIX and compare
-```
-
+The Figures above show key differences between how the indexes weight stocks in each sector. It appears that the Industrials sector is the largest driver of the higher returns of the ALSI.
 ```{r}
 #I now ammend the previous function so that it filters for the cap rather than sector and then it follows exactly the same process
 
@@ -455,7 +454,7 @@ cum_cap_j4<- cap_ret_j4 %>%
     ggplot()+
     geom_line(aes(date, cum_rts, color = Cap))+
     fmxdat::theme_fmx()+
-    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+    labs(title = "Cumulative Returns of SWIX", subtitle = "By Market Cap", x = "Date", y = "Cumulative Returns")
 
 cum_cap_j4
 ```
@@ -470,11 +469,14 @@ cum_cap_j2<- cap_ret_j2 %>%
     ggplot()+
     geom_line(aes(date, cum_rts, color = Cap))+
     fmxdat::theme_fmx()+
-    labs(title = "Cumulative Returns of All Funds", subtitle = "Without fees", x = "Date", y = "Cumulative Returns")
+    labs(title = "Cumulative Returns of ALSI", subtitle = "by Market Cap", x = "Date", y = "Cumulative Returns")
 
-cum_cap_j2
+ cum_cap_j2
 ```
+Moving on to index sizes, the figures above show that there is very little difference between index sizes. The returns for small caps of ALSI are slightly higher than for SWIX. Beyond that there is little difference, thus I would argue that the composition within sectors is a larger driver of the differences in returns.
+
 # Stratification
+
 ```{r}
 Idxs <- alsi_rets
 
@@ -545,7 +547,7 @@ kableExtra::kable(perf_hi)
 ```{r}
 kableExtra::kable(perf_lo)
 ```
-
+The table shows that in high volatile periods of the exchange rate both the SWIX and the ALSI have increased volatility as well but the SWIX is effected more than the ALSI. There is little to no difference during low volatility periods.
 # Capping
 ```{r}
 #Let's follow the extra prac 1 for this 
@@ -606,96 +608,7 @@ Idx <-
 
 
 ```{r}
-#Function
-library(tidyverse)
-library(rmsfuns)
-
-rebalance_and_calculate_returns <- function(data, fund_name, w_cap) {
-  rebalance_col <- data %>%
-    rename("weight" = {{ fund_name }}) %>%
-    filter(date %in% Rebalance_days) %>%
-    mutate(RebalanceTime = format(date, "%Y%B%A")) %>%
-    group_by(RebalanceTime) %>%
-    arrange(desc(weight)) %>%
-    ungroup() %>%
-    arrange(date) %>%
-    select(date, Tickers, weight, RebalanceTime)
-
-  # df_Cons <- rebalance_col %>% filter(date == first(date))
-  # W_Cap = 0.8
-Proportional_Cap_Foo <- function(df_Cons, W_Cap = 0.05){
-
-    # Let's require a specific form from the user... Alerting when it does not adhere this form
-    if( !"weight" %in% names(df_Cons)) stop("... for Calc capping to work, provide weight column called 'weight'")
-
-    if( !"date" %in% names(df_Cons)) stop("... for Calc capping to work, provide date column called 'date'")
-
-    if( !"Tickers" %in% names(df_Cons)) stop("... for Calc capping to work, provide id column called 'Tickers'")
-
-    # First identify the cap breachers...
-    Breachers <-
-        df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers)
-
-    # Now keep track of breachers, and add to it to ensure they remain at 10%:
-    if(length(Breachers) > 0) {
-
-        while( df_Cons %>% filter(weight > W_Cap) %>% nrow() > 0 ) {
-
-
-            df_Cons <-
-
-                bind_rows(
-
-                    df_Cons %>% filter(Tickers %in% Breachers) %>% mutate(weight = W_Cap),
-
-                    df_Cons %>% filter(!Tickers %in% Breachers) %>%
-                        mutate(weight = (weight / sum(weight, na.rm=T)) * (1-length(Breachers)*W_Cap) )
-
-                )
-
-            Breachers <- c(Breachers, df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers))
-
-        }
-
-        if( sum(df_Cons$weight, na.rm=T) > 1.001 | sum(df_Cons$weight, na.rm=T) < 0.999 | max(df_Cons$weight, na.rm = T) > W_Cap) {
-
-            stop( glue::glue("For the Generic weight trimming function used: the weight trimming causes non unit
-      summation of weights for date: {unique(df_Cons$date)}...\n
-      The restriction could be too low or some dates have extreme concentrations...") )
-
-        }
-
-    } else {
-
-    }
-
-    df_Cons
-
-}
-  # Now, to map this across all the dates, we can use purrr::map_df as follows:
-  Capped_df <- rebalance_col %>%
-    # Split our df into groups (where the groups here are the rebalance dates:
-    group_split(RebalanceTime) %>%
-    # Apply the function Proportional_Cap_Foo to each rebalancing date:
-    map_df(~Proportional_Cap_Foo(., W_Cap = w_cap)) %>% select(-RebalanceTime)
-
-  wts <- Capped_df %>%
-    tbl_xts(cols_to_xts = weight, spread_by = Tickers)
-
-  rts <- data %>%
-    filter(Tickers %in% unique(Capped_df$Tickers)) %>%
-    tbl_xts(cols_to_xts = Return, spread_by = Tickers)
-
-  wts[is.na(wts)] <- 0
-  rts[is.na(rts)] <- 0
-
-  Idx <- rmsfuns::Safe_Return.portfolio(R = rts, weights = wts, lag_weights = TRUE) %>%
-    # Let's make this a tibble:
-    xts_tbl() %>%
-    rename({{ fund_name }} := "portfolio.returns")
-
-  return(Idx)
-}
+#I wrap the  proportional cap foo Function such that I can just input the fund name and weight cap and it returns capped portfolio returns
 
 #now use the function to get the returns and get ready to "plot this bugga"
 alsi_5 <- rebalance_and_calculate_returns(ALSI, J203, w_cap = 0.05) %>% 
@@ -754,11 +667,11 @@ idx %>%
   geom_line(aes(y = alsi, color = "ALSI"), size = 1) +
   geom_line(aes(y = swix, color = "SWIX"), size = 1) +
   facet_wrap(~Index, scales = "free_y", ncol = 1) +
-  labs(title = "ALSI and SWIX Over Time", x = "Date", y = "Value") +
+  labs(title = "ALSI and SWIX Over Time", subtitle = "With different caps",  x = "Date", y = "Value") +
   scale_color_manual(values = c(ALSI = "blue", SWIX = "red"))+
     theme_fmx()
 ```
-
+The Figure above shows that the ALSI is more susceptible decreased returns from the imposition of capping but under all three restrictions still outperforms the SWIX. 
 \newpage
 
 # References {-}

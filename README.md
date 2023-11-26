@@ -9,8 +9,8 @@ gc() # garbage collection - It can be useful to call gc after a large object has
 ```
 
     ##          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    ## Ncells 464634 24.9     992870 53.1         NA   669311 35.8
-    ## Vcells 867507  6.7    8388608 64.0      16384  1840178 14.1
+    ## Ncells 465345 24.9     994901 53.2         NA   669311 35.8
+    ## Vcells 872807  6.7    8388608 64.0      16384  1840178 14.1
 
 ``` r
 library(tidyverse)
@@ -802,3 +802,761 @@ Unhedged
 </tr>
 </tbody>
 </table>
+
+# Question 3
+
+``` r
+#read in the data
+ALSI <- read_rds("Question 3/data/ALSI.rds")
+RebDays <- read_rds("Question 3/data/Rebalance_days.rds")
+ZAR <- read_rds("Question 3/data/Monthly_zar.rds")
+swix <- read_rds("Question 3/data/Capped_SWIX.rds")
+```
+
+## Introduction 
+
+This question presents an analysis of the return profiles of the SWIX
+(J403) and the ALSI (J203). I begin by simply plotting the cumulative
+returns of both funds with all sectors and market caps. I then break
+down both indexes by sector and market caps. I then provide insights
+into the volatility of both indexes subject to high a low volatility
+periods of the USD/ZAR exchange rate. Lastly, I present the cumulative
+return profiles of both indexes subject to different constrains on the
+capping. This report provides evidence that the methodology used for the
+J203 (ALSI) provides higher returns and is influenced less by exchange
+rate volatility.
+
+``` r
+#The question has three parts
+#1) Compare the SWIX and ALSI (two funds) and then within the ALSI we need to compare rreturns of sectors and cap size
+#1) stratefy using the rand and then I want to redo point 1
+#3) capping 5%, 10% and uncapped
+```
+
+``` r
+# #We can use the rmsfun safe return portfolio if we get the weights
+# 
+#   sectors<- unique(ALSI$Sector) 
+# 
+# #for each sector we need to reweight the tickers in each sector
+# 
+# #Lets find returns for resources first and then we can redo ir for all other sectors and indexes or try and make a function if we have time
+# resource_wts <- ALSI %>% 
+#     filter(Sector == "Resources") %>% 
+#     group_by(date) %>% 
+#     mutate(J203 = J203/sum(J203)) %>% #the weights will now sum to 1
+#     mutate(J403= J403/sum(J403)) %>% 
+#     ungroup() 
+# 
+# res_rts <- resource_wts %>% 
+#     select(date, Tickers, Return)
+# #I actually need to separate the weights so we can find the return for both funds
+# j2_wts <- resource_wts %>% 
+#     select(date, Tickers, J203 ) %>% 
+#     spread(Tickers,J203) %>% 
+#     tbl_xts()
+# j2_wts[is.na(j2_wts)] <- 0
+# 
+# 
+# j4_wts <- resource_wts %>% 
+#     select(date, Tickers, J403) %>% 
+#     tbl_xts()
+# 
+# #We need to get the returns for each ticker as well and put it into xts 
+# resource_returns <- resource_wts %>% 
+#     select(date, Tickers, Return) %>% 
+#     spread(Tickers, Return) %>% 
+#     tbl_xts()
+# resource_returns[is.na(resource_returns)] <- 0 #the function cannot handle NAs
+# 
+# #?Safe_Return.portfolio    
+# j2_resport_rts <- Safe_Return.portfolio(resource_returns, j2_wts, lag_weights = TRUE, contribution = TRUE, verbose = TRUE, value = 1000, geometric = TRUE) 
+# 
+# j2_res_cont<- 
+#     j2_resport_rts$"contribution" %>% xts_tbl()
+# 
+# j2_res_BPwts<-
+#     j2_resport_rts$"BOP.Weight" %>% xts_tbl() 
+# 
+# j2_resValue <- 
+#     j2_resport_rts$BOP.Value %>% xts_tbl() 
+# 
+# #Let's Bind all of this together
+# df_res_rtsj2 <- 
+#     left_join(res_rts, j2_res_BPwts %>% gather(Tickers, weights, -date), by = c("date", "Tickers")) %>% 
+#     
+#     left_join(., j2_resValue %>% gather(Tickers, value_held, -date),
+#                 by = c("date", "Tickers") ) %>%  
+#     
+#     left_join(., j2_res_cont %>%  gather(Tickers, Contribution, -date),
+#                 by = c("date", "Tickers"))
+# 
+# df_j2_resport<- df_res_rtsj2 %>% group_by(date) %>% summarise(Resources = sum(Return*weights, na.rm =TRUE))%>% filter(PortfolioReturn != 0)
+```
+
+``` r
+#I want to plot the cumulative returns of the J403, J203 and SWIX
+
+#we have the weights so now I just follow the prac 
+j403_wts <- ALSI %>% 
+    select(date, Tickers, J403) %>% spread(Tickers, J403) %>% tbl_xts()
+j403_wts[is.na(j403_wts)] <- 0
+
+j203_wts <- ALSI %>% 
+    select(date, Tickers, J203) %>% spread(Tickers, J203) %>% tbl_xts()
+j203_wts[is.na(j203_wts)] <- 0
+
+
+df_Returns <- ALSI %>% 
+    select(date, Tickers, Return) %>%  spread(Tickers, Return)
+df_Returns[is.na(df_Returns)] <- 0
+xts_df_Returns <- df_Returns %>% tbl_xts()
+
+J403_RetPort <- 
+      rmsfuns::Safe_Return.portfolio(xts_df_Returns, 
+                                     
+                       weights = j403_wts, lag_weights = TRUE,
+                       
+                       verbose = TRUE, contribution = TRUE, 
+                       
+                       value = 1000, geometric = TRUE) 
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+    J203_RetPort <- 
+      rmsfuns::Safe_Return.portfolio(xts_df_Returns, 
+                                     
+                       weights = j203_wts, lag_weights = TRUE,
+                       
+                       verbose = TRUE, contribution = TRUE, 
+                       
+                       value = 1000, geometric = TRUE) 
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+# Clean and save portfolio returns and weights:
+J403_Contribution <- 
+      J403_RetPort$"contribution" %>% xts_tbl() 
+
+J403_BPWeight <- 
+  
+      J403_RetPort$"BOP.Weight" %>% xts_tbl() 
+
+J403_BPValue <- 
+  
+     J403_RetPort$"BOP.Value" %>% xts_tbl()  
+    
+# Clean and save portfolio returns and weights:
+J203_Contribution <- 
+      J203_RetPort$"contribution" %>% xts_tbl() 
+
+J203_BPWeight <- 
+      J203_RetPort$"BOP.Weight" %>% xts_tbl()  
+
+J203_BPValue <- 
+      J203_RetPort$"BOP.Value" %>% xts_tbl()
+    
+
+    
+    # Let's bind all of these together now:
+    
+    df_port_return_J403 <- 
+      left_join(ALSI %>% select(date, Tickers, Return) ,
+                J403_BPWeight %>% gather(Tickers, weight, -date),
+                by = c("date", "Tickers") ) %>% 
+      
+      left_join(.,
+                J403_BPValue %>% gather(Tickers, value_held, -date),
+                by = c("date", "Tickers") ) %>% 
+      
+      left_join(.,
+                J403_Contribution %>% gather(Tickers, Contribution, -date),
+                by = c("date", "Tickers"))
+
+    df_port_return_J203 <- 
+      left_join(ALSI %>% select(date, Tickers, Return),
+                J203_BPWeight %>% gather(Tickers, weight, -date),
+                by = c("date", "Tickers") ) %>% 
+      
+      left_join(.,
+               J203_BPValue %>% gather(Tickers, value_held, -date),
+                by = c("date", "Tickers") ) %>% 
+      
+      left_join(.,
+                J203_Contribution %>% gather(Tickers, Contribution, -date),
+                by = c("date", "Tickers"))
+
+# Calculate Portfolio Returns:
+df_Portf_J403 <- 
+    df_port_return_J403 %>% group_by(date) %>% summarise(PortfolioReturn = sum(Return*weight, na.rm =TRUE)) %>% 
+      filter(PortfolioReturn != 0)
+      
+# Calculate Portfolio Returns:
+df_Portf_J203 <- 
+    df_port_return_J203 %>% group_by(date) %>% summarise(PortfolioReturn = sum(Return*weight, na.rm =TRUE)) %>% 
+      filter(PortfolioReturn != 0)
+#Now lets join the dfs
+alsi_rets<-
+    left_join(df_Portf_J203 %>% rename("ALSI"= "PortfolioReturn"), df_Portf_J403 %>% rename("SWIX"= "PortfolioReturn"), by = "date") %>% 
+    gather(Index, ret, -date)
+```
+
+``` r
+#Lets plot them now 
+compar_plot<- alsi_rets %>% 
+    arrange(date) %>% 
+    group_by(Index) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Index))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of Both Indexes",  x = "Date", y = "Cumulative Returns")
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+compar_plot
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-23-1.png) The
+figure above highlights that ALSI has a higher cumulative return that
+the SWIX
+
+``` r
+#I created a function that filters the data to each sector, adjusts the weight so all the weights of each stock in th sector sum to one (REMEMBER this). then I follow practical 2 where i apply the rmsfun::Safe_Return.portfolio to get the final portfolio returns
+
+
+#apply the function to all of the sectors for both indexes and then
+Resources_j4 <-calculate_portfolio_returns(data = ALSI, sector_name = "Resources", fund_name = "J403") %>% 
+    rename("Resources"= "PortfolioReturn" )
+
+Financial_j4<- calculate_portfolio_returns(data = ALSI, sector_name = "Financials", fund_name = "J403") %>% 
+    rename("Financials"= "PortfolioReturn")
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+Industrials_j4 <- calculate_portfolio_returns(data = ALSI, sector_name = "Industrials", fund_name = "J403") %>% 
+    rename("Industrials"= "PortfolioReturn")
+
+Property_j4 <-  calculate_portfolio_returns(data = ALSI, sector_name = "Property", fund_name = "J403") %>% 
+    rename("Property"= "PortfolioReturn")
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+#now do it again for fund J203
+Resources_j2 <-calculate_portfolio_returns(data = ALSI, sector_name = "Resources", fund_name = "J203") %>% 
+    rename("Resources"= "PortfolioReturn" )
+
+Financial_j2<- calculate_portfolio_returns(data = ALSI, sector_name = "Financials", fund_name = "J203") %>% 
+    rename("Financials"= "PortfolioReturn")
+
+Industrials_j2 <- calculate_portfolio_returns(data = ALSI, sector_name = "Industrials", fund_name = "J203") %>% 
+    rename("Industrials"= "PortfolioReturn")
+
+Property_j2 <-  calculate_portfolio_returns(data = ALSI, sector_name = "Property", fund_name = "J203") %>% 
+    rename("Property"= "PortfolioReturn")   
+
+#Now I just need to join them all together
+#Unfortunatly the function did not work perfectly and I cannot identify the issue, so i needed to use the impute returns function to ensure that i could plot the returns
+Sectors_returns_j4 <-
+    left_join(Resources_j4, Financial_j4, by = "date") %>% 
+    left_join(., Industrials_j4, by ="date") %>% 
+    left_join(., Property_j4, by = "date") %>% 
+    impute_missing_returns(., impute_returns_method  = "Drawn_Distribution_Own") %>% 
+    gather(Sector, ret, -date)
+
+Sectors_returns_j2<- 
+     left_join(Resources_j4, Financial_j2, by = "date") %>% 
+    left_join(., Industrials_j2, by ="date") %>% 
+    left_join(., Property_j2, by = "date")%>% 
+     impute_missing_returns(., impute_returns_method  = "Drawn_Distribution_Own") %>% 
+    gather(Sector, ret, -date)
+```
+
+``` r
+#Now lets plot the cumulative returns for both funds by sector
+cum_sectors_j4<- Sectors_returns_j4 %>% 
+    arrange(date) %>% 
+    group_by(Sector) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Sector))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of SWIX", subtitle = "by Sector", x = "Date", y = "Cumulative Returns")
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+cum_sectors_j4
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-25-1.png)
+
+``` r
+cum_sectors_j2<- Sectors_returns_j2 %>% 
+    arrange(date) %>% 
+    group_by(Sector) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Sector))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of ALSI", subtitle = "By Sector", x = "Date", y = "Cumulative Returns")
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+cum_sectors_j2 
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-26-1.png)
+
+The Figures above show key differences between how the indexes weight
+stocks in each sector. It appears that the Industrials sector is the
+largest driver of the higher returns of the ALSI.
+
+``` r
+#I now ammend the previous function so that it filters for the cap rather than sector and then it follows exactly the same process
+
+# caps<- unique(ALSI$Index_Name) 
+
+#follow the same process and get the returns for the different caps
+large_j4 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Large_Caps", fund_name = "J403") %>% 
+    rename("Large_SWIX"= "PortfolioReturn" )
+
+mid_j4 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Mid_Caps", fund_name = "J403") %>% 
+    rename("Mid_SWIX"= "PortfolioReturn" )
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+small_j4 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Small_Caps", fund_name = "J403") %>% 
+    rename("Small_SWIX"= "PortfolioReturn" )
+
+large_j2 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Large_Caps", fund_name = "J403") %>% 
+    rename("Large_ALSI"= "PortfolioReturn" )
+
+mid_j2 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Mid_Caps", fund_name = "J403") %>% 
+    rename("Mid_ALSI"= "PortfolioReturn" )
+```
+
+    ## Warning in Return.portfolio.geometric(R = R, weights = weights, wealth.index =
+    ## wealth.index, : The weights for one or more periods do not sum up to 1:
+    ## assuming a return of 0 for the residual weights
+
+``` r
+small_j2 <-calculate_portfolio_returns_cap(data = ALSI, cap_name = "Small_Caps", fund_name = "J403") %>% 
+    rename("Small_ALSI"= "PortfolioReturn" )
+
+
+#join each fund
+cap_ret_j4 <-
+    left_join(large_j4, mid_j4, by = "date") %>% 
+    left_join(.,small_j4, by = "date") %>% 
+    impute_missing_returns(., impute_returns_method  = "Drawn_Distribution_Own") %>% 
+    gather(Cap, ret, -date)
+
+cap_ret_j2 <-
+    left_join(large_j2, mid_j2, by = "date") %>% 
+    left_join(.,small_j2, by = "date") %>% 
+    impute_missing_returns(., impute_returns_method  = "Drawn_Distribution_Own") %>% 
+    gather(Cap, ret, -date)
+```
+
+``` r
+cum_cap_j4<- cap_ret_j4 %>% 
+    arrange(date) %>% 
+    group_by(Cap) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Cap))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of SWIX", subtitle = "By Market Cap", x = "Date", y = "Cumulative Returns")
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+cum_cap_j4
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-28-1.png)
+
+``` r
+cum_cap_j2<- cap_ret_j2 %>% 
+    arrange(date) %>% 
+    group_by(Cap) %>% 
+    mutate(cum_rts = cumprod(1+ret)) %>% 
+    select(-ret) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Cap))+
+    fmxdat::theme_fmx()+
+    labs(title = "Cumulative Returns of ALSI", subtitle = "by Market Cap", x = "Date", y = "Cumulative Returns")
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+ cum_cap_j2
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-29-1.png) Moving
+on to index sizes, the figures above show that there is very little
+difference between index sizes. The returns for small caps of ALSI are
+slightly higher than for SWIX. Beyond that there is little difference,
+thus I would argue that the composition within sectors is a larger
+driver of the differences in returns.
+
+## Stratification
+
+``` r
+Idxs <- alsi_rets
+
+Idxs <-
+  
+  Idxs %>% 
+    mutate(Year = format(date, "%Y")) %>% 
+    
+    group_by(Index) %>% 
+  
+  mutate(Top = quantile(ret, 0.99), Bot = quantile(ret, 0.01)) %>% 
+  
+  mutate(ret = ifelse(ret > Top, Top, 
+                         
+                         ifelse(ret < Bot, Bot, ret))) %>% ungroup()
+
+ZARSD <- ZAR %>% 
+    filter(date>lubridate::ymd(20130101)) %>% #to match the index data
+    mutate(Year = format(date, "%Y")) %>% #unlike the prac we have montly data so we need to look at yearly rather
+    arrange(date) %>% 
+    mutate(Return= value/lag(value)-1) %>% 
+  
+  group_by(Year) %>% summarise(SD = sd(Return)*sqrt(12)) %>% 
+  
+  # Top Decile Quantile overall (highly volatile month for ZAR:
+  mutate(TopQtile = quantile(SD, 0.8, na.rm = TRUE),
+         
+         BotQtile = quantile(SD, 0.2, na.rm = TRUE))
+
+
+
+Hi_Vol <- ZARSD %>% filter(SD > TopQtile) %>% pull(Year)
+
+Low_Vol <- ZARSD %>% filter(SD < BotQtile) %>% pull(Year)
+
+Perf_comparisons <- function(Idxs, Ys, Alias){
+  # For stepping through uncomment:
+  # YMs <- Hi_Vol
+  Unconditional_SD <- 
+    
+  Idxs %>% 
+    
+    group_by(Index) %>% 
+    
+    mutate(Full_SD = sd(ret) * sqrt(12)) %>% 
+    
+    filter(Year %in% Ys) %>% 
+    
+    summarise(SD = sd(ret) * sqrt(12), across(.cols = starts_with("Full"), .fns = max)) %>% 
+    
+    arrange(desc(SD)) %>% mutate(Period = Alias) %>% 
+    
+    group_by(Index) %>% 
+    
+    mutate(Ratio = SD / Full_SD)
+    
+    Unconditional_SD
+  
+}
+
+perf_hi <- Perf_comparisons(Idxs, Ys = Hi_Vol, Alias = "High_Vol")
+
+perf_lo <- Perf_comparisons(Idxs, Ys = Low_Vol, Alias = "Low_Vol")
+
+kableExtra::kable(perf_hi)
+```
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+Index
+</th>
+<th style="text-align:right;">
+SD
+</th>
+<th style="text-align:right;">
+Full_SD
+</th>
+<th style="text-align:left;">
+Period
+</th>
+<th style="text-align:right;">
+Ratio
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+SWIX
+</td>
+<td style="text-align:right;">
+0.0427946
+</td>
+<td style="text-align:right;">
+0.0352164
+</td>
+<td style="text-align:left;">
+High_Vol
+</td>
+<td style="text-align:right;">
+1.215188
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ALSI
+</td>
+<td style="text-align:right;">
+0.0421107
+</td>
+<td style="text-align:right;">
+0.0349374
+</td>
+<td style="text-align:left;">
+High_Vol
+</td>
+<td style="text-align:right;">
+1.205317
+</td>
+</tr>
+</tbody>
+</table>
+
+``` r
+kableExtra::kable(perf_lo)
+```
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+Index
+</th>
+<th style="text-align:right;">
+SD
+</th>
+<th style="text-align:right;">
+Full_SD
+</th>
+<th style="text-align:left;">
+Period
+</th>
+<th style="text-align:right;">
+Ratio
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+ALSI
+</td>
+<td style="text-align:right;">
+0.0352852
+</td>
+<td style="text-align:right;">
+0.0349374
+</td>
+<td style="text-align:left;">
+Low_Vol
+</td>
+<td style="text-align:right;">
+1.0099538
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SWIX
+</td>
+<td style="text-align:right;">
+0.0347505
+</td>
+<td style="text-align:right;">
+0.0352164
+</td>
+<td style="text-align:left;">
+Low_Vol
+</td>
+<td style="text-align:right;">
+0.9867711
+</td>
+</tr>
+</tbody>
+</table>
+
+The table shows that in high volatile periods of the exchange rate both
+the SWIX and the ALSI have increased volatility as well but the SWIX is
+effected more than the ALSI. There is little to no difference during low
+volatility periods. \## Capping
+
+``` r
+#Let's follow the extra prac 1 for this 
+#start with J403
+Rebalance_days <- RebDays %>% 
+    filter(Date_Type == "Reb Trade Day") %>% # only concerned on the day that we are actually rebalancing
+    pull(date)
+
+rebalance_col <- ALSI %>%
+    rename("weight"= "J403") %>% #the functions use weight so this makes it easier for me later on
+    filter(date %in% Rebalance_days ) %>% 
+    mutate(RebalanceTime = format(date, "%Y%B%A")) %>% 
+    group_by(RebalanceTime) %>% 
+    arrange(desc(weight)) %>% 
+    ungroup() %>% 
+    arrange(date) %>% 
+    select(date, Tickers, weight, RebalanceTime )
+
+# df_Cons <- rebalance_col %>% filter(date == first(date))
+#  W_Cap = 0.8
+  
+
+# Now, to map this across all the dates, we can use purrr::map_df as follows:
+  Capped_df <- 
+    
+    rebalance_col %>% 
+    # Split our df into groups (where the groups here are the rebalance dates:
+    group_split(RebalanceTime) %>% 
+    
+    # Apply the function Proportional_Cap_Foo to each rebalancing date:
+    map_df(~Proportional_Cap_Foo(., W_Cap = 0.08) ) %>% select(-RebalanceTime)
+    
+
+wts<-
+    Capped_df %>% 
+    tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+rts <- ALSI %>% 
+    filter(Tickers %in% unique(Capped_df$Tickers) ) %>% 
+  
+  tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+wts[is.na(wts)] <- 0
+
+rts[is.na(rts)] <- 0
+
+Idx <- 
+  rmsfuns::Safe_Return.portfolio(R = rts, weights = wts, lag_weights = T) %>% 
+  
+  # Let's make this a tibble:
+  xts_tbl() %>% 
+  
+  rename("J403" = "portfolio.returns")
+```
+
+``` r
+#I wrap the  proportional cap foo Function such that I can just input the fund name and weight cap and it returns capped portfolio returns
+
+#now use the function to get the returns and get ready to "plot this bugga"
+alsi_5 <- rebalance_and_calculate_returns(ALSI, J203, w_cap = 0.05) %>% 
+    rename("ALSI"= "J203") %>% 
+    mutate(Index = "5%")
+
+alsi_10 <- rebalance_and_calculate_returns(ALSI, J203, w_cap = 0.10) %>% 
+    rename("ALSI"= "J203") %>% 
+    mutate(Index = "10%")
+
+alsi_un <- rebalance_and_calculate_returns(ALSI, J203, w_cap = 1) %>% 
+    rename("ALSI"= "J203") %>% 
+    mutate(Index = "No Cap")
+
+swix_5 <- rebalance_and_calculate_returns(ALSI, J403, w_cap = 0.05) %>% 
+    rename("SWIX"= "J403") %>% 
+    mutate(Index = "5%")
+
+swix_10 <- rebalance_and_calculate_returns(ALSI, J403, w_cap = 0.1) %>% 
+    rename("SWIX"= "J403") %>% 
+    mutate(Index = "10%")
+
+swix_un <- rebalance_and_calculate_returns(ALSI, J403, w_cap = 1) %>% 
+    rename("SWIX"= "J403") %>% 
+    mutate(Index = "No Cap")
+
+
+# Combine ALSI data frames
+alsi_combined <- bind_rows(
+  alsi_5 %>% select(date, ALSI, Index),
+  alsi_10 %>% select(date, ALSI, Index),
+  alsi_un %>% select(date, ALSI, Index)
+)
+
+# Combine SWIX data frames
+swix_combined <- bind_rows(
+  swix_5 %>% select(date, SWIX, Index),
+  swix_10 %>% select(date, SWIX, Index),
+  swix_un %>% select(date, SWIX, Index)
+)
+
+# Merge ALSI and SWIX data frames based on the "date" column
+idx <- full_join(alsi_combined, swix_combined, by = c("date","Index")) %>% 
+    select(date, SWIX, ALSI, Index)
+```
+
+``` r
+# Let's plot this bugger
+idx %>% 
+  mutate(swix = cumprod(1+SWIX)) %>% 
+    mutate(alsi = cumprod(1+ALSI)) %>% 
+  
+  ggplot(., aes(x = date)) +
+  geom_line(aes(y = alsi, color = "ALSI"), size = 1) +
+  geom_line(aes(y = swix, color = "SWIX"), size = 1) +
+  facet_wrap(~Index, scales = "free_y", ncol = 1) +
+  labs(title = "ALSI and SWIX Over Time", subtitle = "With different caps",  x = "Date", y = "Value") +
+  scale_color_manual(values = c(ALSI = "blue", SWIX = "red"))+
+    theme_fmx()
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+![](README_files/figure-markdown_github/unnamed-chunk-34-1.png) The
+Figure above shows that the ALSI is more susceptible decreased returns
+from the imposition of capping but under all three restrictions still
+outperforms the SWIX.
