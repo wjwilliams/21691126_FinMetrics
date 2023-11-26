@@ -178,7 +178,7 @@
 
 \begin{frontmatter}  %
 
-\title{Question 1}
+\title{Question 4}
 
 % Set to FALSE if wanting to remove title (for submission)
 
@@ -198,7 +198,8 @@
 
 \begin{abstract}
 \small{
-Answers the Question
+Do past performers do consistently better? Investigating the returns and
+subsequent flows of winners and losers.
 }
 \end{abstract}
 
@@ -240,11 +241,23 @@ Answers the Question
 \hypertarget{broad-overview}{%
 \section{Broad Overview}\label{broad-overview}}
 
+The figure below shows the top, middle and bottom thirds of actively
+managed funds. It then shows the average flow in the subsequent period
+by performance. It is evident from the figure that total flows to to the
+previous period's top funds are almost always positive. This highlights
+the persistence of flows to previous periods winners.
+
 \includegraphics{Question4_files/figure-latex/unnamed-chunk-3-1.pdf}
 
 \includegraphics{Question4_files/figure-latex/unnamed-chunk-4-1.pdf}
 
 \includegraphics{Question4_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+Comparing the funds that have outperformed the benchmark (capped SWIX)
+on the most and least occasions gives an idea of what the returns would
+be for strategies that that elected to chase winners or instead chose to
+chase losers. It is clear to see that at the extremes chasing the
+winners is a superior strategy.
 
 \begin{tabular}{l|r|r|r|r|r|r}
 \hline
@@ -255,6 +268,15 @@ Bad & 0.0063445 & 0.0091190 & 0.0028851 & -0.0018863 & -0.0014035 & 0.0093662\\
 Top & 0.0027796 & 0.0104318 & 0.0160773 & 0.0027332 & 0.0082819 & 0.0007391\\
 \hline
 \end{tabular}
+
+Lastly, I look at the correlations of returns of funds with their flows
+at future dates and the table above shows that returns explain very
+little of subsequent period's flows. The persistence of winners'
+influence on flows is at its highest after 3 months and year. The
+persistence of losers' influence on flows never exceeds 1\% and is
+negative for 2 and 3 years ahead. While the correlations are very small
+in absolute value, when comparing relatively winners do have a much
+larger effect on flows.
 
 \newpage
 

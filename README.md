@@ -9,8 +9,8 @@ gc() # garbage collection - It can be useful to call gc after a large object has
 ```
 
     ##          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    ## Ncells 465345 24.9     994901 53.2         NA   669311 35.8
-    ## Vcells 872807  6.7    8388608 64.0      16384  1840178 14.1
+    ## Ncells 465655 24.9     995787 53.2         NA   669311 35.8
+    ## Vcells 875180  6.7    8388608 64.0      16384  1840178 14.1
 
 ``` r
 library(tidyverse)
@@ -1560,3 +1560,348 @@ idx %>%
 Figure above shows that the ALSI is more susceptible decreased returns
 from the imposition of capping but under all three restrictions still
 outperforms the SWIX.
+
+# Question 4
+
+Please note that the way I set up my folders cause issues, for some
+reason having a space between Question and the number resulted in
+knitting issues so please view the pdf named “Question4” and the issue
+persisted for question 6 as well so please view the pdf names
+“Question6”. I was too scared to delete any of the other files in case
+it exacerbated the issue.
+
+``` r
+#Let's load in the data:
+Flows <- read_rds("Question 4/data/ASISA_Flows.rds")
+Rets <- read_rds("Question 4/data/ASISA_Rets.rds")
+```
+
+## Broad Overview
+
+The figure below shows the top, middle and bottom thirds of actively
+managed funds. It then shows the average flow in the subsequent period
+by performance. It is evident from the figure that total flows to to the
+previous period’s top funds are almost always positive. This highlights
+the persistence of flows to previous periods winners.
+
+``` r
+asisa_full <- 
+    left_join( Rets, Flows, by = c("date", "Fund", "Index", "FoF")) %>% 
+    filter(FoF =="No") %>% 
+    filter(Index == "No") %>% 
+    select(-FoF,-Index) #We do not want any FoFs or indexes
+
+# Do we want to look at indexes?
+
+#What i want to do:
+# Get a rolling 3 year return and from this arrange by desc return and the assign that fund a top, middle or bottom, I can these group by these indicators at each date and then investigate the flows in the next period
+
+#I then want to pull the tickers of the funds that beat the benchmark
+```
+
+``` r
+roll_asisa <- asisa_full %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    arrange(desc(RollRets)) %>% 
+    group_by(date) %>%
+  mutate(PerformanceIndicator = case_when(
+    between(row_number(), 1, n() %/% 3) ~ "Top",
+    between(row_number(), n() %/% 3 + 1, 2 * (n() %/% 3)) ~ "Middle",
+    between(row_number(), 2 * (n() %/% 3) + 1, n()) ~ "Bottom",
+    TRUE ~ NA_character_)) %>%
+  ungroup()
+```
+
+``` r
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# I waant to average out the returns for each performance so that it plots nicely
+avg_returns <- roll_asisa %>%
+  group_by(date, PerformanceIndicator) %>%
+  summarize(AvgRollRets = mean(RollRets, na.rm = TRUE))
+```
+
+    ## `summarise()` has grouped output by 'date'. You can override using the
+    ## `.groups` argument.
+
+``` r
+# Need to get the total flows of the next period to show how performance influences flows in the next period
+total_flows <- roll_asisa %>%
+  group_by(date, PerformanceIndicator) %>%
+  summarize(TotalFlows = sum(lead(Flows), na.rm = TRUE))
+```
+
+    ## `summarise()` has grouped output by 'date'. You can override using the
+    ## `.groups` argument.
+
+``` r
+# Now lets plot them 
+plot_returns<-ggplot(avg_returns) +
+  geom_line(aes(x = date, y = AvgRollRets, color = PerformanceIndicator), size = 1) +
+  labs(title = "Yearly Rolling returns and subsequent flows by Performance",
+         x = NULL,
+       y = "Average Rolling Returns") +
+  scale_color_manual(values = c("Top" = "green", "Middle" = "blue", "Bottom" = "red")) +
+    theme(legend.position = "none")
+
+# Plot total flows
+plot_flows <-ggplot(total_flows) +
+  geom_bar(aes(x = date, y = TotalFlows, fill = PerformanceIndicator), position = "stack", stat = "identity", alpha = 0.7) +
+  labs(title = NULL,
+       x = NULL,
+       y = "Total Flows") +
+  scale_fill_manual(values = c("Top" = "green", "Middle" = "blue", "Bottom" = "red")) +
+  theme_fmx()
+```
+
+    ## Warning in loadfonts_win(quiet = quiet): OS is not Windows. No fonts registered
+    ## with windowsFonts().
+
+``` r
+broad<- plot_returns / plot_flows
+broad
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-38-1.png)
+
+## Winners and Losers
+
+``` r
+#Now i want to bring the capped swix back as the benchmak to assess which funds have outperformed the benchmark the most often
+
+#read in the BM data
+BM<- read_rds("Question 4/data/Capped_SWIX.rds")
+
+
+#First, join the data and then I need to ensure that we have funds over a certain period 
+asisa_BM<- 
+    left_join(asisa_full, BM %>% select(date, Returns) %>% rename("BM"="Returns"), by = "date") %>% 
+    filter(date > lubridate::ymd(20100101)) %>% #only interested post GFC
+    group_by(Fund) %>% 
+    filter(n_distinct(format(date, "%Y")) >= 10)
+
+#Now i want to assign a binary variable to whether a fund beat the benchmark per period and then we can identify the funds that consistently outperformed the BM and summing and dividing by n() will give us the percentage
+perform_top <- asisa_BM %>% 
+  group_by(date) %>% 
+  mutate(Outperformed = ifelse(Returns > BM, 1, 0)) %>% 
+    group_by(Fund) %>% 
+    summarise(out_perc = sum(Outperformed)/n()) %>% 
+    arrange(desc(out_perc)) %>% 
+  top_n(10, out_perc) %>% 
+  pull(Fund)
+
+perform_bad <- asisa_BM %>% 
+  group_by(date) %>% 
+  mutate(Outperformed = ifelse(Returns > BM, 1, 0)) %>% 
+    group_by(Fund) %>% 
+    summarise(out_perc = sum(Outperformed)/n()) %>% 
+    arrange(-desc(out_perc)) %>% 
+  slice_head(n = 10) %>% 
+  pull(Fund)
+
+#Now we have the top and bottom 10 performing funds, lets see how much the drawdowns of the funds effects the overall performance to the benchmark before looking at the flows of the best and worst funds
+
+top_compare_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_top) %>% 
+     arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    
+    ggplot() +
+    geom_line(aes(date, RollRets, colour = Fund))
+    
+
+top_cum_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_top) %>% 
+     arrange(date) %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(cum_rts = cumprod(1+ Returns)) %>% 
+    mutate(BM_cum = cumprod(1+ BM) ) %>% 
+    select(-Returns) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Fund))+
+    labs(title = "Cumulative Returns and Rolling Returns of the top funds",  x = "Date", y = "Cumulative Returns")+
+    theme(legend.position = "none")
+
+top<-  top_cum_plot/top_compare_plot
+
+top
+```
+
+    ## Warning: Removed 88 rows containing missing values (`geom_line()`).
+
+![](README_files/figure-markdown_github/unnamed-chunk-39-1.png)
+
+``` r
+bad_compare_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_bad) %>% 
+     arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(RollRets = RcppRoll::roll_prod(1 + Returns, 12, fill = NA, 
+    align = "right")^(12/24) - 1) %>% 
+    group_by(date) %>% filter(any(!is.na(RollRets))) %>% 
+ungroup() %>% 
+    
+    ggplot() +
+    geom_line(aes(date, RollRets, colour = Fund))
+    
+
+bad_cum_plot <- asisa_BM %>% 
+    filter(Fund %in% perform_bad) %>% 
+     arrange(date) %>% 
+    arrange(date) %>% 
+    group_by(Fund) %>% 
+    mutate(cum_rts = cumprod(1+ Returns)) %>% 
+    mutate(BM_cum = cumprod(1+ BM) ) %>% 
+    select(-Returns) %>% 
+    ungroup() %>% 
+    ggplot()+
+    geom_line(aes(date, cum_rts, color = Fund))+
+    labs(title = "Cumulative Returns and Rolling Returns of the bad funds",  x = "Date", y = "Cumulative Returns")+
+    theme(legend.position = "none")
+    
+bad<- bad_cum_plot/bad_compare_plot
+bad
+```
+
+    ## Warning: Removed 66 rows containing missing values (`geom_line()`).
+
+![](README_files/figure-markdown_github/unnamed-chunk-40-1.png)
+
+Comparing the funds that have outperformed the benchmark (capped SWIX)
+on the most and least occasions gives an idea of what the returns would
+be for strategies that that elected to chase winners or instead chose to
+chase losers. It is clear to see that at the extremes chasing the
+winners is a superior strategy.
+
+## Correlations
+
+``` r
+#Now i want to get the correlation of flows and returns based on the funds identified above,
+asisa_BM <- asisa_BM %>%
+  group_by(Fund) %>%
+  mutate(
+    LeadFlows_1month = lead(Flows, 1),
+    LeadFlows_3months = lead(Flows, 3),
+    LeadFlows_1year = lead(Flows, 12),
+    LeadFlows_2years = lead(Flows, 24),
+    LeadFlows_3years = lead(Flows, 36),
+    LeadFlows_5years = lead(Flows, 60)
+  )
+
+# use the tickers found above
+asisa_BM <- asisa_BM %>%
+  mutate(Type = ifelse(Fund %in% perform_bad, "Bad", "Top"))
+
+# put it all into a table 
+correlation_table <- asisa_BM %>%
+  group_by(Type) %>%
+  summarize(
+    Corr_1month = cor(Returns, LeadFlows_1month, use = "complete.obs"),
+    Corr_3months = cor(Returns, LeadFlows_3months, use = "complete.obs"),
+    Corr_1year = cor(Returns, LeadFlows_1year, use = "complete.obs"),
+    Corr_2years = cor(Returns, LeadFlows_2years, use = "complete.obs"),
+    Corr_3years = cor(Returns, LeadFlows_3years, use = "complete.obs"),
+    Corr_5years = cor(Returns, LeadFlows_5years, use = "complete.obs")
+  )
+
+# Print the correlation table
+kableExtra::kable(correlation_table)
+```
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+Type
+</th>
+<th style="text-align:right;">
+Corr_1month
+</th>
+<th style="text-align:right;">
+Corr_3months
+</th>
+<th style="text-align:right;">
+Corr_1year
+</th>
+<th style="text-align:right;">
+Corr_2years
+</th>
+<th style="text-align:right;">
+Corr_3years
+</th>
+<th style="text-align:right;">
+Corr_5years
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Bad
+</td>
+<td style="text-align:right;">
+0.0063445
+</td>
+<td style="text-align:right;">
+0.0091190
+</td>
+<td style="text-align:right;">
+0.0028851
+</td>
+<td style="text-align:right;">
+-0.0018863
+</td>
+<td style="text-align:right;">
+-0.0014035
+</td>
+<td style="text-align:right;">
+0.0093662
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Top
+</td>
+<td style="text-align:right;">
+0.0027796
+</td>
+<td style="text-align:right;">
+0.0104318
+</td>
+<td style="text-align:right;">
+0.0160773
+</td>
+<td style="text-align:right;">
+0.0027332
+</td>
+<td style="text-align:right;">
+0.0082819
+</td>
+<td style="text-align:right;">
+0.0007391
+</td>
+</tr>
+</tbody>
+</table>
+
+Lastly, I look at the correlations of returns of funds with their flows
+at future dates and the table above shows that returns explain very
+little of subsequent period’s flows. The persistence of winners’
+influence on flows is at its highest after 3 months and year. The
+persistence of losers’ influence on flows never exceeds 1% and is
+negative for 2 and 3 years ahead. While the correlations are very small
+in absolute value, when comparing relatively winners do have a much
+larger effect on flows.

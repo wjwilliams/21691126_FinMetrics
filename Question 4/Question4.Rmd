@@ -33,7 +33,7 @@ linestretch: 1.2
 link-citations: yes
 AddTitle: yes
 abstract: |
-  Answers the Question
+ Do past performers do consistently better? Investigating the returns and subsequent flows of winners and losers.
 ---
 
 <!-- First: Set your default preferences for chunk options: -->
@@ -66,7 +66,7 @@ Rets <- read_rds("data/ASISA_Rets.rds")
 <!-- ############################## -->
 
 # Broad Overview
-
+The figure below shows the top, middle and bottom thirds of actively managed funds. It then shows the average flow in the subsequent period by performance. It is evident from the figure that total flows to to the previous period's top funds are almost always positive. This highlights the persistence of flows to previous periods winners. 
 ```{r}
 
 
@@ -186,8 +186,8 @@ top_compare_plot <- asisa_BM %>%
 ungroup() %>% 
     
     ggplot() +
-    geom_line(aes(date, RollRets, colour = Fund))+
-    geom_line(aes(date, BM), size = 1.5, alpha = 0.5)
+    geom_line(aes(date, RollRets, colour = Fund))
+    
 
 top_cum_plot <- asisa_BM %>% 
     filter(Fund %in% perform_top) %>% 
@@ -200,13 +200,15 @@ top_cum_plot <- asisa_BM %>%
     ungroup() %>% 
     ggplot()+
     geom_line(aes(date, cum_rts, color = Fund))+
-    labs(title = "Cumulative Returns of All Funds",  x = "Date", y = "Cumulative Returns")+
+    labs(title = "Cumulative Returns and Rolling Returns of the top funds",  x = "Date", y = "Cumulative Returns")+
     theme(legend.position = "none")
 
-top<- top_compare_plot/ top_cum_plot
+top<-  top_cum_plot/top_compare_plot
 
 top
 ```
+
+
 
 ```{r}
 bad_compare_plot <- asisa_BM %>% 
@@ -219,8 +221,8 @@ bad_compare_plot <- asisa_BM %>%
 ungroup() %>% 
     
     ggplot() +
-    geom_line(aes(date, RollRets, colour = Fund))+
-    geom_line(aes(date, BM), size = 1.5, alpha = 0.5)
+    geom_line(aes(date, RollRets, colour = Fund))
+    
 
 bad_cum_plot <- asisa_BM %>% 
     filter(Fund %in% perform_bad) %>% 
@@ -233,14 +235,14 @@ bad_cum_plot <- asisa_BM %>%
     ungroup() %>% 
     ggplot()+
     geom_line(aes(date, cum_rts, color = Fund))+
-    labs(title = "Cumulative Returns of All Funds",  x = "Date", y = "Cumulative Returns")+
+    labs(title = "Cumulative Returns and Rolling Returns of the bad funds",  x = "Date", y = "Cumulative Returns")+
     theme(legend.position = "none")
     
-bad<-bad_compare_plot/ bad_cum_plot
+bad<- bad_cum_plot/bad_compare_plot
 bad
 ```
 
-
+Comparing the funds that have outperformed the benchmark (capped SWIX) on the most and least occasions gives an idea of what the returns would be for strategies that that elected to chase winners or instead chose to chase losers. It is clear to see that at the extremes chasing the winners is a superior strategy.
 
 
 
@@ -278,6 +280,8 @@ kableExtra::kable(correlation_table)
 
 
 ```
+
+Lastly, I look at the correlations of returns of funds with their flows at future dates and the table above shows that returns explain very little of subsequent period's flows. The persistence of winners' influence on flows is at  its highest after 3 months and year. The persistence of losers' influence on flows never exceeds 1% and is negative for 2 and 3 years ahead. While the correlations are very small in absolute value, when comparing relatively winners do have a much larger effect on flows.
 
 \newpage
 
