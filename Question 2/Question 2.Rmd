@@ -92,7 +92,7 @@ output:
     fig_width: 3.5 # Adjust default figure sizes. This can also be done in the chunks of the text.
     fig_height: 3.5
 abstract: |
-  Answers the Question
+  Answers the Question of whether a manager should want to hedge against the ZAR or not.
 ---
 
 <!-- First: Set your default preferences for chunk options: -->
@@ -123,6 +123,8 @@ ZAR <- read_rds("data/Monthly_zar.rds")
 <!-- ############################## -->
 
 # Introduction \label{Introduction}
+I start by replicating the figure given in the article. I then construct a hedged and un-hedged portfolio, calculate their three year rolling returns and standard deviation. Lastly, I compare the annualised returns and standard deviations over three different time periods to show that the results hold.
+
 ```{r}
 #Lets start by constructing the porfolio, I want to optimise it using quadprog
 # library(quadprog)
@@ -206,7 +208,7 @@ full_df <- port_ret %>%
     left_join(., ex_ret, by = "date")
 ```
 
-```{r}
+```{r Figure1, warning =  FALSE, fig.align = 'center', fig.cap = "Replication of Scatter plot \\label{Figure1}"}
 #In order to get the percentages on the graph we need to identify how many observations are in each section where the top and bottom left quadrant we also need to consider the fee which appears to be about three percent
 countingdf <- full_df %>% 
     na.omit() #This just gets rid of the nas
@@ -338,7 +340,7 @@ tidy_hedged <-hedged_comp_df
 ```
 
 
-```{r}
+```{r Figure2, warning =  FALSE, fig.align = 'center', fig.cap = "Rolling 2 year Annualised Returns\\label{Figure2}"}
 #Now lets plot the rollinf returns and SD
 #Let's again use the RcppRoll package agin to get annualised reterns and volatility
 library(RcppRoll)
@@ -362,8 +364,8 @@ labs(title = " Rolling 2 Year Annualized Returns",
 
 roll_ret_hedge_plot
 ```
-
-```{r}
+Figure \ref{Figure2} incorporates the fee identified in the study and in Figure \ref{Figure1}. Once the fee has been accounted for it is clear to see the that unhedged portfolio almost always outperforms it's hedged counterpart.
+```{r Figure3, warning =  FALSE, fig.align = 'center', fig.cap = "Rolling 2 year Annualised SD\\label{Figure3}"}
 #Now lets get the rolling sd as a measure of volatility
 
 roll_SD_hedge <-  hedged_comp_df %>% 
@@ -381,7 +383,9 @@ labs(title = "Rolling 3 Year Annualized SD ", x = "", y = "Rolling 2 year SD") +
 
 roll_SD_hedge_plot
 ```
-```{r}
+If the returns comparison was not convincing enough the comparison of a two year rolling SD paints an even clearer picture. Throughout the entire sample period the Hedged portfolio is more risky. Figures \ref{Figure4} and \ref{Figure5} only strengthen this argument to show that the results are strong irrespective of the lookback period. Finally the table at the end of the question calculates the correlations of both portfolios to the USD/ZAR exchange rate and finds that hedged portfolio is more negatively correlated to the USD/ZAR exchange rate. This confirms the existence of the paradox in volatility in that negatively correlated assets may produce portfolio volatilities that
+are lower than the sum of its parts.
+```{r Figure4, warning =  FALSE, fig.align = 'center', fig.cap = "Rolling Returns over time\\label{Figure4}"}
 #Lets give that table a crack
 #Lets get the annulised returns for both portfolios
 #Start by getting tidy data
@@ -410,7 +414,7 @@ ggplot() +
     theme_fmx()
 g
 ```
-```{r}
+```{r Figure5, warning =  FALSE, fig.align = 'center', fig.cap = "Rolling SD over time\\label{Figure5}"}
 #Now I plot a similar graph instead looking at the volatility
 hedge_plot_SD <- 
     bind_rows(
@@ -444,7 +448,7 @@ rho_hedge<- hedged_comp_df %>%
     summarise(Correlation= mean(Correlation))
 
 
-
+kableExtra::kable(rho_hedge)
 
 ```
 

@@ -1,24 +1,24 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.10.1)  25 NOV 2023 13:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.26)  26 NOV 2023 18:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **Question-1.tex
 (./Question-1.tex
-LaTeX2e <2023-06-01> patch level 1
-L3 programming layer <2023-08-29>
+LaTeX2e <2023-11-01>
+L3 programming layer <2023-11-09>
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 Document Class: elsarticle 2020/11/20, 3.3: Elsevier Ltd
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/l3kernel/expl3.sty
-Package: expl3 2023-08-29 L3 programming layer (loader) 
+Package: expl3 2023-11-09 L3 programming layer (loader) 
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
-File: l3backend-pdftex.def 2023-04-19 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count185
+File: l3backend-pdftex.def 2023-11-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count186
 \l__pdf_internal_box=\box51
 )) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/l3packages/xparse/xparse.sty
-Package: xparse 2023-08-29 L3 Experimental document command parser
+Package: xparse 2023-10-10 L3 Experimental document command parser
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2020/10/05 v2.5k e-TeX tools for LaTeX (JAW)
-\etb@tempcnta=\count186
+\etb@tempcnta=\count187
 )
 \@bls=\dimen140
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/base/article.cls
@@ -26,14 +26,14 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/base/size12.clo
 File: size12.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
 )
-\c@part=\count187
-\c@section=\count188
-\c@subsection=\count189
-\c@subsubsection=\count190
-\c@paragraph=\count191
-\c@subparagraph=\count192
-\c@figure=\count193
-\c@table=\count194
+\c@part=\count188
+\c@section=\count189
+\c@subsection=\count190
+\c@subsubsection=\count191
+\c@paragraph=\count192
+\c@subparagraph=\count193
+\c@figure=\count194
+\c@table=\count195
 \abovecaptionskip=\skip48
 \belowcaptionskip=\skip49
 \bibindent=\dimen141
@@ -56,13 +56,13 @@ File: pdftex.def 2022/09/22 v1.2b Graphics/color driver for pdftex
 \Gin@req@height=\dimen142
 \Gin@req@width=\dimen143
 )
-\c@tnote=\count195
-\c@fnote=\count196
-\c@cnote=\count197
-\c@ead=\count198
-\c@author=\count199
+\c@tnote=\count196
+\c@fnote=\count197
+\c@cnote=\count198
+\c@ead=\count199
+\c@author=\count266
 \@eadauthor=\toks18
-\c@affn=\count266
+\c@affn=\count267
 \absbox=\box52
 \elsarticlehighlightsbox=\box53
 \elsarticlegrabsbox=\box54
@@ -80,7 +80,7 @@ Package: natbib 2010/09/13 8.31b (PWD, AO)
 \bibhang=\skip52
 \bibsep=\skip53
 LaTeX Info: Redefining \cite on input line 694.
-\c@NAT@ctr=\count267
+\c@NAT@ctr=\count268
 )
 \splwrite=\write3
 \openout3 = `Question-1.spl'.
@@ -124,7 +124,7 @@ LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
 Package: setspace 2022/12/04 v6.7b set line spacing
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
-\c@float@type=\count268
+\c@float@type=\count269
 \float@exts=\toks20
 \float@box=\box58
 \@float@everytoks=\toks21
@@ -179,14 +179,14 @@ Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2022/04/08 v2.04 operator names
 )
-\inf@bad=\count269
+\inf@bad=\count270
 LaTeX Info: Redefining \frac on input line 234.
-\uproot@=\count270
-\leftroot@=\count271
+\uproot@=\count271
+\leftroot@=\count272
 LaTeX Info: Redefining \overline on input line 399.
 LaTeX Info: Redefining \colon on input line 410.
-\classnum@=\count272
-\DOTSCASE@=\count273
+\classnum@=\count273
+\DOTSCASE@=\count274
 LaTeX Info: Redefining \ldots on input line 496.
 LaTeX Info: Redefining \dots on input line 499.
 LaTeX Info: Redefining \cdots on input line 620.
@@ -199,20 +199,20 @@ LaTeX Info: Redefining \Bigg on input line 725.
 \big@size=\dimen150
 LaTeX Font Info:    Redeclaring font encoding OML on input line 743.
 LaTeX Font Info:    Redeclaring font encoding OMS on input line 744.
-\macc@depth=\count274
+\macc@depth=\count275
 LaTeX Info: Redefining \bmod on input line 905.
 LaTeX Info: Redefining \pmod on input line 910.
 LaTeX Info: Redefining \smash on input line 940.
 LaTeX Info: Redefining \relbar on input line 970.
 LaTeX Info: Redefining \Relbar on input line 971.
-\c@MaxMatrixCols=\count275
+\c@MaxMatrixCols=\count276
 \dotsspace@=\muskip16
-\c@parentequation=\count276
-\dspbrk@lvl=\count277
+\c@parentequation=\count277
+\dspbrk@lvl=\count278
 \tag@help=\toks26
-\row@=\count278
-\column@=\count279
-\maxfields@=\count280
+\row@=\count279
+\column@=\count280
+\maxfields@=\count281
 \andhelp@=\toks27
 \eqnshift@=\dimen151
 \alignsep@=\dimen152
@@ -239,31 +239,31 @@ Package: amsthm 2020/05/29 v2.20.6
 \dth@everypar=\toks35
 LaTeX Info: Redefining \qed on input line 273.
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/tools/longtable.sty
-Package: longtable 2021-09-01 v4.17 Multi-page Table package (DPC)
+Package: longtable 2023-11-01 v4.19 Multi-page Table package (DPC)
 \LTleft=\skip60
 \LTright=\skip61
 \LTpre=\skip62
 \LTpost=\skip63
-\LTchunksize=\count281
+\LTchunksize=\count282
 \LTcapwidth=\dimen157
 \LT@head=\box62
 \LT@firsthead=\box63
 \LT@foot=\box64
 \LT@lastfoot=\box65
 \LT@gbox=\box66
-\LT@cols=\count282
-\LT@rows=\count283
-\c@LT@tables=\count284
-\c@LT@chunks=\count285
+\LT@cols=\count283
+\LT@rows=\count284
+\c@LT@tables=\count285
+\c@LT@chunks=\count286
 \LT@p@ftn=\toks36
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/geometry/geometry.sty
 Package: geometry 2020/01/02 v5.9 Page Geometry
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/iftex/ifvtex.sty
 Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
 )
-\Gm@cnth=\count286
-\Gm@cntv=\count287
-\c@Gm@tempcnt=\count288
+\Gm@cnth=\count287
+\Gm@cntv=\count288
+\c@Gm@tempcnt=\count289
 \Gm@bindingoffset=\dimen158
 \Gm@wd@mp=\dimen159
 \Gm@odd@mp=\dimen160
@@ -298,7 +298,7 @@ Package footmisc Info: Declaring symbol style lamport*-robust on input line 765.
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/base/textcomp.sty
 Package: textcomp 2020/02/02 v2.0n Standard LaTeX package
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/tools/array.sty
-Package: array 2022/09/04 v2.5g Tabular extension package (FMi)
+Package: array 2023/10/16 v2.5g Tabular extension package (FMi)
 \col@sep=\dimen168
 \ar@mcellbox=\box67
 \extrarowheight=\dimen169
@@ -307,7 +307,7 @@ Package: array 2022/09/04 v2.5g Tabular extension package (FMi)
 \backup@length=\skip74
 \ar@cellbox=\box68
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/hyperref/hyperref.sty
-Package: hyperref 2023-07-08 v7.01b Hypertext links for LaTeX
+Package: hyperref 2023-11-09 v7.01f Hypertext links for LaTeX
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
 Package: ltxcmds 2020-05-10 v1.25 LaTeX kernel commands for general use (HO)
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
@@ -331,7 +331,7 @@ Package: letltxmacro 2019/12/03 v1.6 Let assignment for LaTeX macros (HO)
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/auxhook/auxhook.sty
 Package: auxhook 2019-12-17 v1.6 Hooks for auxiliary files (HO)
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/hyperref/nameref.sty
-Package: nameref 2023-08-07 v2.53 Cross-referencing by name of section
+Package: nameref 2023-11-09 v2.55 Cross-referencing by name of section
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/refcount/refcount.sty
 Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
@@ -339,70 +339,70 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/kvoptions/kvoptions.sty
 Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 ))
-\c@section@level=\count289
+\c@section@level=\count290
 )
 \@linkdim=\dimen170
-\Hy@linkcounter=\count290
-\Hy@pagecounter=\count291
+\Hy@linkcounter=\count291
+\Hy@pagecounter=\count292
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/hyperref/pd1enc.def
-File: pd1enc.def 2023-07-08 v7.01b Hyperref: PDFDocEncoding definition (HO)
+File: pd1enc.def 2023-11-09 v7.01f Hyperref: PDFDocEncoding definition (HO)
 Now handling font encoding PD1 ...
 ... no UTF-8 mapping file for font encoding PD1
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/intcalc/intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count292
+\Hy@SavedSpaceFactor=\count293
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/hyperref/puenc.def
-File: puenc.def 2023-07-08 v7.01b Hyperref: PDF Unicode definition (HO)
+File: puenc.def 2023-11-09 v7.01f Hyperref: PDF Unicode definition (HO)
 Now handling font encoding PU ...
 ... no UTF-8 mapping file for font encoding PU
 )
-Package hyperref Info: Hyper figures OFF on input line 4167.
-Package hyperref Info: Link nesting OFF on input line 4172.
-Package hyperref Info: Hyper index ON on input line 4175.
-Package hyperref Info: Plain pages OFF on input line 4182.
-Package hyperref Info: Backreferencing OFF on input line 4187.
+Package hyperref Info: Hyper figures OFF on input line 4171.
+Package hyperref Info: Link nesting OFF on input line 4176.
+Package hyperref Info: Hyper index ON on input line 4179.
+Package hyperref Info: Plain pages OFF on input line 4186.
+Package hyperref Info: Backreferencing OFF on input line 4191.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
-Package hyperref Info: Bookmarks ON on input line 4434.
-\c@Hy@tempcnt=\count293
+Package hyperref Info: Bookmarks ON on input line 4438.
+\c@Hy@tempcnt=\count294
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip17
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
-LaTeX Info: Redefining \url on input line 4772.
+LaTeX Info: Redefining \url on input line 4776.
 \XeTeXLinkMargin=\dimen171
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO)
 ))
-\Fld@menulength=\count294
+\Fld@menulength=\count295
 \Field@Width=\dimen172
 \Fld@charsize=\dimen173
-Package hyperref Info: Hyper figures OFF on input line 6051.
-Package hyperref Info: Link nesting OFF on input line 6056.
-Package hyperref Info: Hyper index ON on input line 6059.
-Package hyperref Info: backreferencing OFF on input line 6066.
-Package hyperref Info: Link coloring OFF on input line 6071.
-Package hyperref Info: Link coloring with OCG OFF on input line 6076.
-Package hyperref Info: PDF/A mode OFF on input line 6081.
+Package hyperref Info: Hyper figures OFF on input line 6055.
+Package hyperref Info: Link nesting OFF on input line 6060.
+Package hyperref Info: Hyper index ON on input line 6063.
+Package hyperref Info: backreferencing OFF on input line 6070.
+Package hyperref Info: Link coloring OFF on input line 6075.
+Package hyperref Info: Link coloring with OCG OFF on input line 6080.
+Package hyperref Info: PDF/A mode OFF on input line 6085.
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/base/atbegshi-ltx.sty
 Package: atbegshi-ltx 2021/01/10 v1.0c Emulation of the original atbegshi
 package with kernel methods
 )
-\Hy@abspage=\count295
-\c@Item=\count296
-\c@Hfootnote=\count297
+\Hy@abspage=\count296
+\c@Item=\count297
+\c@Hfootnote=\count298
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/hyperref/hpdftex.def
-File: hpdftex.def 2023-07-08 v7.01b Hyperref driver for pdfTeX
+File: hpdftex.def 2023-11-09 v7.01f Hyperref driver for pdfTeX
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/base/atveryend-ltx.sty
 Package: atveryend-ltx 2020/08/19 v1.0a Emulation of the original atveryend package
 with kernel methods
 )
-\Fld@listcount=\count298
-\c@bookmark@seq@number=\count299
+\Fld@listcount=\count299
+\c@bookmark@seq@number=\count300
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
 Package: rerunfilecheck 2022-07-10 v1.10 Rerun checks for auxiliary files (HO)
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
@@ -419,21 +419,21 @@ Package hyperref Warning: Option `bookmarks' has already been used,
 
 Package hyperref Info: Option `colorlinks' set `true' on input line 87.
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/siunitx/siunitx.sty
-Package: siunitx 2023-10-07 v3.3.7 A comprehensive (SI) units package
-\l__siunitx_number_uncert_offset_int=\count300
-\l__siunitx_number_exponent_fixed_int=\count301
-\l__siunitx_number_min_decimal_int=\count302
-\l__siunitx_number_min_integer_int=\count303
-\l__siunitx_number_round_precision_int=\count304
-\l__siunitx_number_lower_threshold_int=\count305
-\l__siunitx_number_upper_threshold_int=\count306
-\l__siunitx_number_group_first_int=\count307
-\l__siunitx_number_group_size_int=\count308
-\l__siunitx_number_group_minimum_int=\count309
+Package: siunitx 2023-11-14 v3.3.9 A comprehensive (SI) units package
+\l__siunitx_number_uncert_offset_int=\count301
+\l__siunitx_number_exponent_fixed_int=\count302
+\l__siunitx_number_min_decimal_int=\count303
+\l__siunitx_number_min_integer_int=\count304
+\l__siunitx_number_round_precision_int=\count305
+\l__siunitx_number_lower_threshold_int=\count306
+\l__siunitx_number_upper_threshold_int=\count307
+\l__siunitx_number_group_first_int=\count308
+\l__siunitx_number_group_size_int=\count309
+\l__siunitx_number_group_minimum_int=\count310
 \l__siunitx_angle_tmp_dim=\dimen174
 \l__siunitx_angle_marker_box=\box69
 \l__siunitx_angle_unit_box=\box70
-\l__siunitx_compound_count_int=\count310
+\l__siunitx_compound_count_int=\count311
 \l__siunitx_table_tmp_box=\box71
 \l__siunitx_table_tmp_dim=\dimen175
 \l__siunitx_table_column_width_dim=\dimen176
@@ -444,37 +444,37 @@ Package: siunitx 2023-10-07 v3.3.7 A comprehensive (SI) units package
 \l__siunitx_table_after_box=\box76
 \l__siunitx_table_before_dim=\dimen177
 \l__siunitx_table_carry_dim=\dimen178
-\l__siunitx_unit_tmp_int=\count311
-\l__siunitx_unit_position_int=\count312
-\l__siunitx_unit_total_int=\count313
+\l__siunitx_unit_tmp_int=\count312
+\l__siunitx_unit_position_int=\count313
+\l__siunitx_unit_total_int=\count314
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/multirow/multirow.sty
 Package: multirow 2021/03/15 v2.8 Span multiple rows of a table
 \multirow@colwidth=\skip76
-\multirow@cntb=\count314
+\multirow@cntb=\count315
 \multirow@dima=\skip77
 \bigstrutjot=\dimen179
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/tools/hhline.sty
 Package: hhline 2020/01/04 v2.04 Table rule package (DPC)
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/tools/calc.sty
-Package: calc 2017/05/25 v4.3 Infix arithmetic (KKT,FJ)
-\calc@Acount=\count315
-\calc@Bcount=\count316
+Package: calc 2023/07/08 v4.3 Infix arithmetic (KKT,FJ)
+\calc@Acount=\count316
+\calc@Bcount=\count317
 \calc@Adimen=\dimen180
 \calc@Bdimen=\dimen181
 \calc@Askip=\skip78
 \calc@Bskip=\skip79
 LaTeX Info: Redefining \setlength on input line 80.
 LaTeX Info: Redefining \addtolength on input line 81.
-\calc@Ccount=\count317
+\calc@Ccount=\count318
 \calc@Cskip=\skip80
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/tools/tabularx.sty
-Package: tabularx 2020/01/15 v2.11c `tabularx' package (DPC)
+Package: tabularx 2023/07/08 v2.11c `tabularx' package (DPC)
 \TX@col@width=\dimen182
 \TX@old@table=\dimen183
 \TX@old@col=\dimen184
 \TX@target=\dimen185
 \TX@delta=\dimen186
-\TX@cols=\count318
+\TX@cols=\count319
 \TX@ftn=\toks40
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/booktabs/booktabs.sty
 Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
@@ -488,12 +488,12 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \cmidrulesep=\dimen194
 \cmidrulekern=\dimen195
 \defaultaddspace=\dimen196
-\@cmidla=\count319
-\@cmidlb=\count320
+\@cmidla=\count320
+\@cmidlb=\count321
 \@aboverulesep=\dimen197
 \@belowrulesep=\dimen198
-\@thisruleclass=\count321
-\@lastruleclass=\count322
+\@thisruleclass=\count322
+\@lastruleclass=\count323
 \@thisrulewidth=\dimen199
 ) (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/caption/caption.sty
 Package: caption 2023/08/05 v3.6o Customizing captions (AR)
@@ -511,8 +511,8 @@ Package caption Info: elsarticle document class detected.
 (/Users/wesleywilliams/Library/TinyTeX/texmf-dist/tex/latex/caption/caption-elsarticle.sto
 File: caption-elsarticle.sto 2020/08/22 v2.0 Adaption of the caption package to the elsarticle document class (AR)
 ))
-\c@caption@flags=\count323
-\c@continuedfloat=\count324
+\c@caption@flags=\count324
+\c@continuedfloat=\count325
 Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: longtable package is loaded.
@@ -653,23 +653,24 @@ File: Question-1_files/figure-latex/Figure3-1.pdf Graphic file (type pdf)
 <use Question-1_files/figure-latex/Figure3-1.pdf>
 Package pdftex.def Info: Question-1_files/figure-latex/Figure3-1.pdf  used on input line 257.
 (pdftex.def)             Requested size: 433.61894pt x 361.34912pt.
-<Question-1_files/figure-latex/Figure4-1.pdf, id=53, 433.62pt x 361.35pt>
+[3 <./Question-1_files/figure-latex/Figure2-1.pdf>]
+<Question-1_files/figure-latex/Figure4-1.pdf, id=65, 433.62pt x 361.35pt>
 File: Question-1_files/figure-latex/Figure4-1.pdf Graphic file (type pdf)
 <use Question-1_files/figure-latex/Figure4-1.pdf>
-Package pdftex.def Info: Question-1_files/figure-latex/Figure4-1.pdf  used on input line 265.
+Package pdftex.def Info: Question-1_files/figure-latex/Figure4-1.pdf  used on input line 266.
 (pdftex.def)             Requested size: 433.61894pt x 361.34912pt.
-[3 <./Question-1_files/figure-latex/Figure2-1.pdf>] [4 <./Question-1_files/figure-latex/Figure3-1.pdf>]
+[4 <./Question-1_files/figure-latex/Figure3-1.pdf>]
 <Question-1_files/figure-latex/Figure5-1.pdf, id=80, 433.62pt x 361.35pt>
 File: Question-1_files/figure-latex/Figure5-1.pdf Graphic file (type pdf)
 <use Question-1_files/figure-latex/Figure5-1.pdf>
-Package pdftex.def Info: Question-1_files/figure-latex/Figure5-1.pdf  used on input line 278.
+Package pdftex.def Info: Question-1_files/figure-latex/Figure5-1.pdf  used on input line 279.
 (pdftex.def)             Requested size: 433.61894pt x 361.34912pt.
 [5 <./Question-1_files/figure-latex/Figure4-1.pdf>] [6 <./Question-1_files/figure-latex/Figure5-1.pdf>]
 No file Question-1.bbl.
 [7] (./Question-1.aux)
  ***********
-LaTeX2e <2023-06-01> patch level 1
-L3 programming layer <2023-08-29>
+LaTeX2e <2023-11-01>
+L3 programming layer <2023-11-09>
  ***********
 
 LaTeX Warning: There were multiply-defined labels.
@@ -678,15 +679,15 @@ Package rerunfilecheck Info: File `Question-1.out' has not changed.
 (rerunfilecheck)             Checksum: 4CA05A9A8A0BFF03FBF6F1E1E12976E0;626.
  ) 
 Here is how much of TeX's memory you used:
- 16306 strings out of 476894
- 305899 string characters out of 5807616
- 1921791 words of memory out of 5000000
- 37335 multiletter control sequences out of 15000+600000
+ 16332 strings out of 476233
+ 306861 string characters out of 5795518
+ 1927555 words of memory out of 5000000
+ 38021 multiletter control sequences out of 15000+600000
  601473 words of font info for 67 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,11n,79p,547b,924s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,547b,906s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri7.pfb></Users/wesleywilliams/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on Question-1.pdf (7 pages, 214334 bytes).
+Output written on Question-1.pdf (7 pages, 214345 bytes).
 PDF statistics:
  158 PDF objects out of 1000 (max. 8388607)
  123 compressed objects within 2 object streams

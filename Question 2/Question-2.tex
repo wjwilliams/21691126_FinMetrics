@@ -130,6 +130,20 @@
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 
 %%% Include extra packages specified by user
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
 
 %%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
 %% page layout
@@ -184,7 +198,8 @@
 
 \begin{abstract}
 \small{
-Answers the Question
+Answers the Question of whether a manager should want to hedge against
+the ZAR or not.
 }
 \end{abstract}
 
@@ -227,16 +242,85 @@ Answers the Question
 \section{\texorpdfstring{Introduction
 \label{Introduction}}{Introduction }}\label{introduction}}
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-2-1.pdf}
+I start by replicating the figure given in the article. I then construct
+a hedged and un-hedged portfolio, calculate their three year rolling
+returns and standard deviation. Lastly, I compare the annualised returns
+and standard deviations over three different time periods to show that
+the results hold.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question-2_files/figure-latex/Figure1-1} 
+
+}
+
+\caption{Replication of Scatter plot \label{Figure1}}\label{fig:Figure1}
+\end{figure}
 
 \hypertarget{volatility-analysis}{%
 \section{Volatility analysis}\label{volatility-analysis}}
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-4-1.pdf}
+\begin{figure}[H]
 
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-5-1.pdf}
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-6-1.pdf}
-\includegraphics{Question-2_files/figure-latex/unnamed-chunk-7-1.pdf}
+{\centering \includegraphics{Question-2_files/figure-latex/Figure2-1} 
+
+}
+
+\caption{Rolling 2 year Annualised Returns\label{Figure2}}\label{fig:Figure2}
+\end{figure}
+
+Figure \ref{Figure2} incorporates the fee identified in the study and in
+Figure \ref{Figure1}. Once the fee has been accounted for it is clear to
+see the that unhedged portfolio almost always outperforms it's hedged
+counterpart.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question-2_files/figure-latex/Figure3-1} 
+
+}
+
+\caption{Rolling 2 year Annualised SD\label{Figure3}}\label{fig:Figure3}
+\end{figure}
+
+If the returns comparison was not convincing enough the comparison of a
+two year rolling SD paints an even clearer picture. Throughout the
+entire sample period the Hedged portfolio is more risky. Figures
+\ref{Figure4} and \ref{Figure5} only strengthen this argument to show
+that the results are strong irrespective of the lookback period. Finally
+the table at the end of the question calculates the correlations of both
+portfolios to the USD/ZAR exchange rate and finds that hedged portfolio
+is more negatively correlated to the USD/ZAR exchange rate. This
+confirms the existence of the paradox in volatility in that negatively
+correlated assets may produce portfolio volatilities that are lower than
+the sum of its parts.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question-2_files/figure-latex/Figure4-1} 
+
+}
+
+\caption{Rolling Returns over time\label{Figure4}}\label{fig:Figure4}
+\end{figure}
+\begin{figure}[H]
+
+{\centering \includegraphics{Question-2_files/figure-latex/Figure5-1} 
+
+}
+
+\caption{Rolling SD over time\label{Figure5}}\label{fig:Figure5}
+\end{figure}
+
+\begin{tabular}{l|r}
+\hline
+Type & Correlation\\
+\hline
+Hedged & -0.6121116\\
+\hline
+Unhedged & -0.5452580\\
+\hline
+\end{tabular}
 
 \newpage
 
