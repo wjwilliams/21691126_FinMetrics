@@ -9,8 +9,8 @@ gc() # garbage collection - It can be useful to call gc after a large object has
 ```
 
     ##          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    ## Ncells 465655 24.9     995787 53.2         NA   669311 35.8
-    ## Vcells 875180  6.7    8388608 64.0      16384  1840178 14.1
+    ## Ncells 465875 24.9     996415 53.3         NA   669311 35.8
+    ## Vcells 876648  6.7    8388608 64.0      16384  1840178 14.1
 
 ``` r
 library(tidyverse)
@@ -1905,3 +1905,352 @@ persistence of losers’ influence on flows never exceeds 1% and is
 negative for 2 and 3 years ahead. While the correlations are very small
 in absolute value, when comparing relatively winners do have a much
 larger effect on flows.
+
+# Question 6
+
+``` r
+library(tidyverse)
+library(xts)
+library(tbl2xts)
+library(RiskPortfolios)
+library(PerformanceAnalytics)
+library(PortfolioAnalytics)
+```
+
+    ## Loading required package: foreach
+
+    ## 
+    ## Attaching package: 'foreach'
+
+    ## The following objects are masked from 'package:purrr':
+    ## 
+    ##     accumulate, when
+
+``` r
+library(lubridate)
+library(kableExtra)
+```
+
+    ## 
+    ## Attaching package: 'kableExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     group_rows
+
+``` r
+MAA <- read_rds("Question 6/data/MAA.rds")
+msci <-
+read_rds("Question 6/data/msci.rds") %>%
+filter(Name %in% c("MSCI_ACWI", "MSCI_USA", "MSCI_RE", "MSCI_Jap"))
+```
+
+## Porfolio Construction
+
+I present a portfolio constructed subject to the following constraint
+
+``` r
+#Now I combine the data frame
+df_full <- rbind(msci %>%  rename("Tickers"= "Name"),MAA %>% select(-Name) %>% rename("Tickers" = "Ticker")) %>% 
+    arrange(date) #sanity
+
+#now lets clean the data according to the constraints
+monthly_df <- df_full %>% 
+  filter(date >= lubridate::ymd(20110101)) %>% # Only include data after 2010
+  filter(n_distinct(format(date, "%Y")) >= 3) %>%  # Make sure that there is at least three years of data
+  mutate(YM = format(date, "%Y%B")) %>% 
+arrange(date) %>% 
+group_by(Tickers, YM) %>% filter(date == last(date)) %>% 
+group_by(Tickers) %>% 
+mutate(ret = Price/lag(Price) - 1) %>% select(date, Tickers, 
+    ret) %>% ungroup() %>% 
+    filter(date > first(date))
+```
+
+``` r
+#now we need to get the return matrix to get Sigma and mu
+#Following the extra tut, just to be careful lets make sure there are no missing values 
+return_mat <- monthly_df %>% 
+    spread(Tickers, ret)
+
+# impute_missing_returns(return_mat, impute_returns_method = "NONE")
+#Now that I know we do not have any NAs we can continue
+return_mat_Nodate <- data.matrix(return_mat[, -1])
+# Simple Sample covariance and mean:
+Sigma <- RiskPortfolios::covEstimation(return_mat_Nodate)
+Mu <- return_mat %>% summarise(across(-date, ~prod(1+.)^(1/n())-1)) %>% purrr::as_vector()
+
+
+#Now need to make the amat and bvec
+#1, currency 2. commodity 3. Currency 4. Bonds 5. bonds 6.Bonds 7. bonds 8. bonds 9. bonds 10. equity 11. equity 12. equity 13. equity: bonds (25%) 3:9 equity (60%) 10:13 UB 40%
+
+# Let's now use this in designing Amat, et al...
+
+NStox <- ncol( return_mat_Nodate )
+LB = 0.01
+UB = 0.4
+meq = 1 # as only the first column of Amat is an equality (weight sum equals 1)
+eq_UB = 0.6 #add constraints for eq and bonds
+bond_UB = 0.25
+
+#we also need a matrix for bonds and equities and then bind them to the amat
+eq_const_mat<-  rbind(matrix(0, nrow = 9, ncol = 4),
+                    -diag(4))
+
+
+bond_const_mat <- rbind(matrix(0, nrow = 3, ncol = 6),
+                     -diag(6),
+                     matrix(0, nrow = 4, ncol = 6))
+
+bvec <- c( 1, rep(LB, NStox), -rep(UB, NStox), -rep(bond_UB, 6), -rep(eq_UB, 4))
+Amat <- cbind(1, diag(NStox), -diag(NStox), bond_const_mat, eq_const_mat )
+
+
+#Now we can use quadprog
+
+
+w.opt <- 
+    quadprog::solve.QP(Dmat = Sigma,
+                            dvec = Mu, 
+                            Amat = Amat, 
+                            bvec = bvec, 
+                            meq = meq)$solution
+
+ result.QP <- tibble(stocks = colnames(Sigma), weight = w.opt) 
+
+#I then wrapped this in function called optim_foo
+```
+
+``` r
+#Need to make a reblance object
+
+
+EOQ_datevec <- return_mat %>%
+  select(date) %>%
+  unique() %>%
+  mutate(YM = format(date, "%Y%m")) %>%  # Format to include both year and month
+  group_by(YM) %>%
+  filter(lubridate::month(date) %in% c(1, 4, 7, 10)) %>%  # Filter for end of quarters
+  summarise(date = last(date)) %>%
+  pull(date)
+
+#I then changed the function "roll_optimizer" to include the new optim foo function i just created. Unforeunatly i could not figure out how to include differt types such as min vol etc with quad prog 
+
+Result36 <- 
+EOQ_datevec %>% map_df(~Roll_optimizer(return_mat, EOQ_datevec = ., LookBackSel = 36)) 
+
+kable(Result36 %>% head(13))
+```
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+stocks
+</th>
+<th style="text-align:right;">
+weight
+</th>
+<th style="text-align:left;">
+date
+</th>
+<th style="text-align:right;">
+Look_Back_Period
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+ADXY Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BCOMTR Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DXY Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LEATTREU Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LGAGTRUH Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LGCPTRUH Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LP05TREH Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LUACTRUU Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LUAGTRUU Index
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+MSCI_ACWI
+</td>
+<td style="text-align:right;">
+0.40
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+MSCI_Jap
+</td>
+<td style="text-align:right;">
+0.10
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+MSCI_RE
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+MSCI_USA
+</td>
+<td style="text-align:right;">
+0.40
+</td>
+<td style="text-align:left;">
+2011-04-29
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+</tbody>
+</table>
+
+``` r
+#Lets get a bar plot of the weights overtime
+bar_36_mv<- Result36 %>% select(date, stocks, weight ) %>% spread(stocks, weight) %>% tbl_xts() %>% .[endpoints(.,'months')] %>% chart.StackedBar()
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-46-1.png)
+
+Above I present a table of the weights at the start of the sample period
+(2011). I then plot the weights over time as shown in Figure Figure1.
