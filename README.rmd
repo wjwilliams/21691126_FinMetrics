@@ -1404,7 +1404,246 @@ Lastly, I look at the correlations of returns of funds with their flows at futur
 
 
 
+# Question 5
+```{r}
+library(tidyverse)
+library(rugarch)
+library(lubridate)
+library(tbl2xts)
+library(zoo)
 
+list.files('Question 5/code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
+
+cncy <- read_rds("Question 5/data/currencies.rds")
+cncy_Carry <- read_rds("Question 5/data/cncy_Carry.rds")# We use the Deutsche Bank G10 Harvest Index as the proxy for the returns of a carrystrategy.This index reflects the return of being long the 3 high-yielding currencies against being short the 3 low-yielding currencies within the G10 currency universe. The index is rebalanced quarterly. Every quarter the currencies are re-ranked according to their current 3-month Libor rate. The Bloomberg code for this factor is DBHVG10U Index
+
+cncy_value <- read_rds("Question 5/data/cncy_value.rds") #We use the Deutsche Bank FX PPP Index as the proxy for the returns of a valuestrategy. To gauge relative value, Deutsche Bank prepares a ranking based on the average daily spot rate over the last three months divided by the PPP exchange rate as published annually by the OECD. The FX PPP index reflects the return of being long the 3 currencies with the highest rank (undervalued currencies) against being short the 3 currencies with the lowest rank (overvalued currencies) within G10 currency universe. The Bloomberg code for this factor is DBPPPUSF Index
+
+cncyIV <- read_rds("Question 5/data/cncyIV.rds") #Currency Implied volatility is, in principle, similar to the construction of the VIX index. It uses both put and call option premiums to guage the market's forward implied volatility of the currency. A higher value indicates the market foresees higher future volatility for a currency.
+bbdxy <- read_rds("Question 5/data/bbdxy.rds") #The Bloomberg Dollar Spot Index (BBDXY) tracks the performance of a basket of 10 leading global currencies versus the U.S. Dollar. It has a dynamically updated composition and represents a diverse set of currencies that are important from trade and liquidity perspectives..
+
+```
+
+
+# Volatility of the ZAR 
+```{r}
+#Lets start with the currency returns
+cncy_rts <- cncy %>%  
+    group_by(Name) %>%  
+    mutate(dlogret = log(Price) - log(lag(Price))) %>% 
+    mutate(scaledret = (dlogret - mean(dlogret, na.rm = T))) %>% 
+    filter(date > first(date)) %>% 
+    ungroup() %>% 
+    mutate(Name= gsub("_Cncy", "", Name))  
+    
+
+#The question says over the past few years so lets look from 2018 and find the most volatile currencies
+
+vol_cncy <- cncy_rts %>% 
+    filter(date > ymd(20150101)) %>% 
+    group_by(Name) %>%
+  summarize(avg_std_dev = mean(sd(scaledret, na.rm = TRUE)))
+
+ranked_data <- vol_cncy %>%
+  mutate(rank = rank(-avg_std_dev, na.last = "keep")) %>% 
+    arrange(rank) %>% 
+    top_n(10)
+    
+
+kableExtra::kable(ranked_data)
+ #South Africa is the 8th most volatile stock   
+    
+```
+The table above ranks countries by their currencies average volatility, measured by the average scaled dlog returs standard deviation, since 2018 and it shows that the South Afican ZAR has been the 8th most volatile currency. But this may be due to noise.
+
+```{r}
+# I now want to run a for loop to get the average garch sigma over the same period for all the countries and then rank them again and see if noise is influencing the ranking
+
+#I really tried to get it to work but i couldnt manage
+```
+
+
+
+
+```{r}
+#Lets plot the return type persistence
+
+#Get the returns and ensure they are in xts
+zar_rts <- cncy %>%  
+    filter(date > ymd(20150101)) %>% 
+    group_by(Name) %>%  
+    mutate(ret = Price/lag(Price)-1) %>% 
+    filter(date > first(date)) %>% 
+    ungroup() %>% 
+    mutate(Name= gsub("_Cncy", "", Name)) %>% 
+   filter(Name == "SouthAfrica") %>% 
+     filter(!is.na(ret)) %>% 
+    select(-Name, -Price) %>% 
+    tbl_xts()
+
+#Following the practical for ease of syntax
+Plotdata = cbind(zar_rts, zar_rts^2, abs(zar_rts))
+colnames(Plotdata) = c("Returns", "Returns_Sqd", "Returns_Abs")
+
+Plotdata <- 
+Plotdata %>% xts_tbl() %>% 
+gather(ReturnType, Returns, -date)
+
+ggplot(Plotdata) + 
+geom_line(aes(x = date, y = Returns, colour = ReturnType, alpha = 0.5)) + 
+    
+ggtitle("Return Type Persistence: ZAR") + 
+facet_wrap(~ReturnType, nrow = 3, ncol = 1, scales = "free") + 
+    
+guides(alpha = "none", colour = "none") + 
+fmxdat::theme_fmx()
+```
+The figure above shows clear signs of both first and second order persistence. To verify this I plot the ACFs.
+
+```{r}
+forecast::Acf(zar_rts, main = "ACF: ZAR")
+```
+
+
+```{r}
+forecast::Acf(zar_rts^2, main = "ACF: Squared ZAR")
+```
+
+```{r}
+forecast::Acf(abs(zar_rts), main = "ACF: Absolute ZAR")
+```
+
+```{r}
+Box.test(coredata(zar_rts^2), type = "Ljung-Box", lag = 12)
+```
+
+Both the ACFs and the Box-Ljung test confirm that there is strong conditional heteroskedasticity, as well as long memory. The null hypothesis of no ARCH effects is rejected by the small p-value.
+## Fitting the GARCH
+```{r}
+
+# Now we can actually fit the univariate garch model
+cncy_rts_xts <- cncy %>%  
+    filter(date > ymd(20180101)) %>% 
+    group_by(Name) %>%  
+    mutate(ret = Price/lag(Price)-1) %>% 
+    filter(date > first(date)) %>% 
+    ungroup() %>% 
+    mutate(Name= gsub("_Cncy", "", Name)) %>% 
+   filter(Name == "SouthAfrica") %>% 
+      filter(!is.na(ret)) %>% 
+    select(-Name, -Price) %>% 
+    tbl_xts()
+
+
+#now i follow the practical as to fit the model
+
+garch11 <- 
+  
+  ugarchspec(
+    
+    variance.model = list(model = c("sGARCH","gjrGARCH","eGARCH","fGARCH","apARCH")[1], 
+                          
+    garchOrder = c(1, 1)), 
+    
+    mean.model = list(armaOrder = c(1, 0), include.mean = TRUE), 
+    
+    distribution.model = c("norm", "snorm", "std", "sstd", "ged", "sged", "nig", "ghyp", "jsu")[1])
+
+# Now to fit, I use as.matrix and the data - this way the plot functions we will use later will work.
+
+garchfit1 = ugarchfit(spec = garch11,data = cncy_rts_xts) 
+sigma <- sigma(garchfit1) %>% xts_tbl() 
+```
+
+```{r}
+garch_tab <- garchfit1@fit$matcoef
+kableExtra::kable(garch_tab)
+```
+The $ \alpha$ and $\beta$ coefficients are highly significant. This means that there is strong persistence in volatility and of volatility clustering, meaning periods of high volatility tend to follow each other.
+```{r}
+sigma <- sigma(garchfit1) %>% xts_tbl() 
+colnames(sigma) <- c("date", "sigma") 
+sigma <- sigma %>% mutate(date = as.Date(date))
+
+gg <- 
+  
+ggplot() + 
+  geom_line(data = Plotdata %>% filter(ReturnType == "Returns_Sqd") %>% select(date, Returns) %>% 
+              
+              unique %>% mutate(Returns = sqrt(Returns)), aes(x = date, y = Returns)) + 
+  
+  geom_line(data = sigma, aes(x = date, y = sigma), color = "red", size = 2, alpha = 0.8) + 
+  
+  # scale_y_continuous(limits = c(0, 0.35)) + 
+  labs(title = "Comparison: Returns Sigma vs Sigma from Garch") + 
+  
+    fmxdat::theme_fmx()
+
+
+fmxdat::finplot(gg, y.pct = T, y.pct_acc = 1)
+```
+Now, we have a noise reduced measure of volatility.
+
+## GO-GARCH 
+```{r}
+#Now I use the bbdxy to compare the volatility of the rand to global currencies
+
+g10_rts <- bbdxy %>% 
+    mutate(G10 = log(Price)-log(lag(Price))) %>% 
+    filter(date > first(date)) %>% 
+    select(date, G10)
+
+zar_log_rts <- cncy_rts %>% 
+    filter(Name == "SouthAfrica") %>% 
+    rename("ZAR" = "dlogret") %>% 
+    select(date, ZAR) 
+
+
+
+xts_rtn<- left_join(g10_rts,zar_log_rts, by=  "date") %>% tbl_xts()
+library(rmgarch)
+#Now set the specifications for the go garch
+uspec <- ugarchspec(variance.model = list(model = "gjrGARCH", 
+    garchOrder = c(1, 1)), mean.model = list(armaOrder = c(1, 
+    0), include.mean = TRUE), distribution.model = "sstd")
+
+multi_univ_garch_spec <- multispec(replicate(ncol(xts_rtn), uspec))
+
+spec.go <- gogarchspec(multi_univ_garch_spec, 
+                       distribution.model = 'mvnorm', # or manig.
+                       ica = 'fastica') # Note: we use the fastICA
+cl <- makePSOCKcluster(10)
+multf <- multifit(multi_univ_garch_spec, xts_rtn, cluster = cl)
+
+fit.gogarch <- gogarchfit(spec.go, 
+                      data = xts_rtn, 
+                      solver = 'hybrid', 
+                      cluster = cl, 
+                      gfun = 'tanh', 
+                      maxiter1 = 40000, 
+                      epsilon = 1e-08, 
+                      rseed = 100)
+
+gog.time.var.cor <- rcor(fit.gogarch)
+gog.time.var.cor <- aperm(gog.time.var.cor,c(3,2,1))
+dim(gog.time.var.cor) <- c(nrow(gog.time.var.cor), ncol(gog.time.var.cor)^2)
+# Finally:
+gog.time.var.cor <-
+renamingdcc(ReturnSeries = xts_rtn, DCC.TV.Cor = gog.time.var.cor)
+   
+```
+
+```{r}
+g2 <- ggplot(gog.time.var.cor %>% filter(grepl("ZAR_", Pairs), 
+    !grepl("_ZAR", Pairs))) + geom_line(aes(x = date, y = Rho, 
+    colour = Pairs)) + fmxdat::theme_fmx() + ggtitle("Go-GARCH: ZAR")
+g2
+```
+Lastly I plot the GO-GARCH's correlation between G10 currencies and the Rand. This graph now provides more evidence for how volatile the Rand is with the correleations over just 3 years ranging between 0.7 and 0.2.
+\newpage
+```{r}
+detach("package:rmgarch", unload=TRUE)
+```
 
 
 
@@ -1554,9 +1793,10 @@ kable(Result36 %>% head(13))
 
 
 
+
 ```{r}
 #Lets get a bar plot of the weights overtime
 bar_36_mv<- Result36 %>% select(date, stocks, weight ) %>% spread(stocks, weight) %>% tbl_xts() %>% .[endpoints(.,'months')] %>% chart.StackedBar()
 ```
 
-Above I present a table of the weights at the start of the sample period (2011). I then plot the weights over time as shown in Figure Figure1.
+Above I present a table of the weights at the start of the sample period (2011). I then plot the weights over time as shown in Figure 1.
