@@ -1447,7 +1447,7 @@ vol_cncy <- cncy_rts %>%
 ranked_data <- vol_cncy %>%
   mutate(rank = rank(-avg_std_dev, na.last = "keep")) %>% 
     arrange(rank) %>% 
-    top_n(10)
+    slice_head(n=20)
     
 
 kableExtra::kable(ranked_data)
@@ -1523,7 +1523,7 @@ Both the ACFs and the Box-Ljung test confirm that there is strong conditional he
 
 # Now we can actually fit the univariate garch model
 cncy_rts_xts <- cncy %>%  
-    filter(date > ymd(20180101)) %>% 
+    filter(date > ymd(20150101)) %>% 
     group_by(Name) %>%  
     mutate(ret = Price/lag(Price)-1) %>% 
     filter(date > first(date)) %>% 
@@ -1559,7 +1559,7 @@ sigma <- sigma(garchfit1) %>% xts_tbl()
 garch_tab <- garchfit1@fit$matcoef
 kableExtra::kable(garch_tab)
 ```
-The $ \alpha$ and $\beta$ coefficients are highly significant. This means that there is strong persistence in volatility and of volatility clustering, meaning periods of high volatility tend to follow each other.
+The $\alpha$ and $\beta$ coefficients are highly significant. This means that there is strong persistence in volatility and of volatility clustering, meaning periods of high volatility tend to follow each other.
 ```{r}
 sigma <- sigma(garchfit1) %>% xts_tbl() 
 colnames(sigma) <- c("date", "sigma") 

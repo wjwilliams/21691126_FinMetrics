@@ -9,8 +9,8 @@ gc() # garbage collection - It can be useful to call gc after a large object has
 ```
 
     ##          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    ## Ncells 466371 25.0     997837 53.3         NA   669302 35.8
-    ## Vcells 879393  6.8    8388608 64.0      16384  1840208 14.1
+    ## Ncells 466370 25.0     997834 53.3         NA   669302 35.8
+    ## Vcells 879387  6.8    8388608 64.0      16384  1840208 14.1
 
 ``` r
 library(tidyverse)
@@ -1965,12 +1965,9 @@ vol_cncy <- cncy_rts %>%
 ranked_data <- vol_cncy %>%
   mutate(rank = rank(-avg_std_dev, na.last = "keep")) %>% 
     arrange(rank) %>% 
-    top_n(10)
-```
+    slice_head(n=20)
+    
 
-    ## Selecting by rank
-
-``` r
 kableExtra::kable(ranked_data)
 ```
 
@@ -1991,112 +1988,222 @@ rank
 <tbody>
 <tr>
 <td style="text-align:left;">
-Israel
+Ghana
 </td>
 <td style="text-align:right;">
-0.0034227
+0.0133703
 </td>
 <td style="text-align:right;">
-32
+1
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-India
+Argentina
 </td>
 <td style="text-align:right;">
-0.0032137
+0.0119544
 </td>
 <td style="text-align:right;">
-33
+2
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-Singapore
+Nigeria
 </td>
 <td style="text-align:right;">
-0.0030857
+0.0114748
 </td>
 <td style="text-align:right;">
-34
+3
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-Thailand
+Egypt
 </td>
 <td style="text-align:right;">
-0.0028940
+0.0111624
 </td>
 <td style="text-align:right;">
-35
+4
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-Philipines
+Zambia
 </td>
 <td style="text-align:right;">
-0.0025418
+0.0108368
 </td>
 <td style="text-align:right;">
-36
+5
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-China
+Brazil
 </td>
 <td style="text-align:right;">
-0.0023430
+0.0107192
 </td>
 <td style="text-align:right;">
-37
+6
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-Taiwan
+Turkey
 </td>
 <td style="text-align:right;">
-0.0022633
+0.0102997
 </td>
 <td style="text-align:right;">
-38
+7
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-HongKong
+SouthAfrica
 </td>
 <td style="text-align:right;">
-0.0003695
+0.0101896
 </td>
 <td style="text-align:right;">
-39
+8
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-Saudi
+Russia
 </td>
 <td style="text-align:right;">
-0.0001530
+0.0098690
 </td>
 <td style="text-align:right;">
-40
+9
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-UAE
+Columbia
 </td>
 <td style="text-align:right;">
-0.0000124
+0.0084828
 </td>
 <td style="text-align:right;">
-41
+10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mexico
+</td>
+<td style="text-align:right;">
+0.0083886
+</td>
+<td style="text-align:right;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norway
+</td>
+<td style="text-align:right;">
+0.0073514
+</td>
+<td style="text-align:right;">
+12
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Chile
+</td>
+<td style="text-align:right;">
+0.0067539
+</td>
+<td style="text-align:right;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NZ_Inv
+</td>
+<td style="text-align:right;">
+0.0064288
+</td>
+<td style="text-align:right;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hungary
+</td>
+<td style="text-align:right;">
+0.0063517
+</td>
+<td style="text-align:right;">
+15
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Poland
+</td>
+<td style="text-align:right;">
+0.0062783
+</td>
+<td style="text-align:right;">
+16
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Australia_Inv
+</td>
+<td style="text-align:right;">
+0.0061457
+</td>
+<td style="text-align:right;">
+17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+UK_Inv
+</td>
+<td style="text-align:right;">
+0.0060173
+</td>
+<td style="text-align:right;">
+18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Sweden
+</td>
+<td style="text-align:right;">
+0.0059233
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Czech
+</td>
+<td style="text-align:right;">
+0.0057921
+</td>
+<td style="text-align:right;">
+20
 </td>
 </tr>
 </tbody>
@@ -2198,7 +2305,7 @@ Fitting the GARCH
 ``` r
 # Now we can actually fit the univariate garch model
 cncy_rts_xts <- cncy %>%  
-    filter(date > ymd(20180101)) %>% 
+    filter(date > ymd(20150101)) %>% 
     group_by(Name) %>%  
     mutate(ret = Price/lag(Price)-1) %>% 
     filter(date > first(date)) %>% 
@@ -2260,16 +2367,16 @@ Pr(\>\|t\|)
 mu
 </td>
 <td style="text-align:right;">
-0.0001290
+0.0002103
 </td>
 <td style="text-align:right;">
-0.0002892
+0.0002280
 </td>
 <td style="text-align:right;">
-0.4462246
+0.9219578
 </td>
 <td style="text-align:right;">
-0.6554350
+0.3565506
 </td>
 </tr>
 <tr>
@@ -2277,16 +2384,16 @@ mu
 ar1
 </td>
 <td style="text-align:right;">
-0.0032466
+0.0079536
 </td>
 <td style="text-align:right;">
-0.0325598
+0.0241637
 </td>
 <td style="text-align:right;">
-0.0997119
+0.3291566
 </td>
 <td style="text-align:right;">
-0.9205730
+0.7420373
 </td>
 </tr>
 <tr>
@@ -2294,16 +2401,16 @@ ar1
 omega
 </td>
 <td style="text-align:right;">
-0.0000029
+0.0000021
 </td>
 <td style="text-align:right;">
-0.0000009
+0.0000016
 </td>
 <td style="text-align:right;">
-3.1998093
+1.3404439
 </td>
 <td style="text-align:right;">
-0.0013752
+0.1801011
 </td>
 </tr>
 <tr>
@@ -2311,16 +2418,16 @@ omega
 alpha1
 </td>
 <td style="text-align:right;">
-0.0454413
+0.0470507
 </td>
 <td style="text-align:right;">
-0.0050295
+0.0138758
 </td>
 <td style="text-align:right;">
-9.0348775
+3.3908425
 </td>
 <td style="text-align:right;">
-0.0000000
+0.0006968
 </td>
 </tr>
 <tr>
@@ -2328,13 +2435,13 @@ alpha1
 beta1
 </td>
 <td style="text-align:right;">
-0.9224490
+0.9328047
 </td>
 <td style="text-align:right;">
-0.0107290
+0.0174360
 </td>
 <td style="text-align:right;">
-85.9768476
+53.4986983
 </td>
 <td style="text-align:right;">
 0.0000000
@@ -2343,7 +2450,7 @@ beta1
 </tbody>
 </table>
 
-The $ $ and *β* coefficients are highly significant. This means that
+The *α* and *β* coefficients are highly significant. This means that
 there is strong persistence in volatility and of volatility clustering,
 meaning periods of high volatility tend to follow each other.
 

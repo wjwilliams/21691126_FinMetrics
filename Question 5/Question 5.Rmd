@@ -152,7 +152,7 @@ vol_cncy <- cncy_rts %>%
 ranked_data <- vol_cncy %>%
   mutate(rank = rank(-avg_std_dev, na.last = "keep")) %>% 
     arrange(rank) %>% 
-    top_n(10)
+    slice_head(n=20)
     
 
 kableExtra::kable(ranked_data)
